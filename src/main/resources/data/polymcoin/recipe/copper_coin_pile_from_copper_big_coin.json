@@ -1,0 +1,11 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "ingredients",
+  "ingredients": [
+    "polymcoin:copper_big_coin"
+  ],
+  "result": {
+    "count": 4,
+    "id": "polymcoin:copper_coin_pile"
+  }
+}

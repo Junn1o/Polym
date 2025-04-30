@@ -1,0 +1,15 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "ingredients",
+  "ingredients": [
+    "polymcoin:gold_coin",
+    "polymcoin:gold_coin",
+    "polymcoin:gold_coin",
+    "polymcoin:gold_coin",
+    "polymcoin:gold_coin"
+  ],
+  "result": {
+    "count": 1,
+    "id": "polymcoin:gold_coin_pile"
+  }
+}
