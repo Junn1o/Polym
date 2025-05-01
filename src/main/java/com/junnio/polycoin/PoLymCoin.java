@@ -1,5 +1,6 @@
 package com.junnio.polycoin;
 
+import com.junnio.polycoin.recipe.ModRecipes;
 import net.fabricmc.api.ModInitializer;
 
 import org.slf4j.Logger;
@@ -13,5 +14,6 @@ public class PoLymCoin implements ModInitializer {
 	public void onInitialize() {
 		ModItems.initialize();
 		ModBlocks.initialize();
+		ModRecipes.registerRecipes();
 	}
 }
