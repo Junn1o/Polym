@@ -9,5 +9,6 @@
   "item.polymcoin.gold_coin_pile": "50000 Poly",
   "item.polymcoin.gold_big_coin": "200000 Poly",
   "item.polymcoin.polym_table": "Polym Table",
-  "itemGroup.polycoingroupname": "Polym Coin"
+  "itemGroup.polycoingroupname": "Polym Coin",
+  "container.polym_table": "Polym Crafting"
 }
