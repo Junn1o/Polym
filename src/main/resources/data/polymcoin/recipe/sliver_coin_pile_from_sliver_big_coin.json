@@ -2,10 +2,10 @@
   "type": "minecraft:crafting_shapeless",
   "category": "ingredients",
   "ingredients": [
-    "polymcoin:sliver_big_coin"
+    "polymcoin:silver_big_coin"
   ],
   "result": {
     "count": 4,
-    "id": "polymcoin:sliver_coin_pile"
+    "id": "polymcoin:silver_coin_pile"
   }
 }

@@ -2,15 +2,26 @@ package com.junnio.polycoin.recipe;
 
 import net.minecraft.item.ItemStack;
 import net.minecraft.recipe.input.RecipeInput;
+import net.minecraft.util.collection.DefaultedList;
 
-public record PolymTableRecipeInput(RecipeInput input) implements RecipeInput{
+public class PolymTableRecipeInput implements RecipeInput{
+    private final DefaultedList<ItemStack> inputs;
+
+    public PolymTableRecipeInput(DefaultedList<ItemStack> inputs) {
+        this.inputs = inputs;
+    }
+
     @Override
     public ItemStack getStackInSlot(int slot) {
-        return null;
+        return inputs.get(slot);
     }
 
     @Override
     public int size() {
-        return 0;
+        return inputs.size();
+    }
+
+    public DefaultedList<ItemStack> getInputs() {
+        return inputs;
     }
 }

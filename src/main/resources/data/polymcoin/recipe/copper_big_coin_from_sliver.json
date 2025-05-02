@@ -2,7 +2,7 @@
   "type": "minecraft:crafting_shapeless",
   "category": "ingredients",
   "ingredients": [
-    "polymcoin:sliver_coin"
+    "polymcoin:silver_coin"
   ],
   "result": {
     "count": 5,

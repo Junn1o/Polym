@@ -10,7 +10,7 @@ import net.minecraft.util.Identifier;
 public class ModRecipes {
     public static final RecipeSerializer<PolymCraftingRecipe> POLYM_CRAFTING_SERIALIZER = Registry.register(
             Registries.RECIPE_SERIALIZER, Identifier.of(PoLymCoin.MOD_ID, "polym_table"),
-            new PolymCraftingRecipe.Serializer());
+            new PolymCraftingRecipeSerializer());
     public static final RecipeType<PolymCraftingRecipe> POLYM_CRAFTING_TYPE = Registry.register(
             Registries.RECIPE_TYPE, Identifier.of(PoLymCoin.MOD_ID, "polym_table"), new RecipeType<PolymCraftingRecipe>() {
                 @Override

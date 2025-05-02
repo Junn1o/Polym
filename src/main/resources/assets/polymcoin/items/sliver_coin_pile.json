@@ -1,6 +1,6 @@
 {
   "model": {
     "type": "minecraft:model",
-    "model": "polymcoin:item/sliver_coin_pile"
+    "model": "polymcoin:item/silver_coin_pile"
   }
 }
