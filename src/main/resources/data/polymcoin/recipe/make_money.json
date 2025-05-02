@@ -1,0 +1,16 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "###",
+    "DDD",
+    "###"
+  ],
+  "key": {
+    "#": "minecraft:amethyst_cluster",
+    "D": "minecraft:diamond"
+  },
+  "result": {
+    "id": "polymcoin:copper_big_coin",
+    "count": 1
+  }
+}
