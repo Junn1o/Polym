@@ -1,6 +1,6 @@
 {
   "parent": "minecraft:item/generated",
   "textures": {
-    "layer0": "polymcoin:item/silver_big_coin"
+    "layer0": "polymcoin:item/silver_coin_pile"
   }
 }

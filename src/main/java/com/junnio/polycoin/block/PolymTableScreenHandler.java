@@ -1,4 +1,4 @@
-package com.junnio.polycoin;
+package com.junnio.polycoin.block;
 
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.PlayerInventory;
@@ -9,11 +9,15 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.network.packet.s2c.play.ScreenHandlerSlotUpdateS2CPacket;
 import net.minecraft.recipe.CraftingRecipe;
 import net.minecraft.recipe.RecipeEntry;
+import net.minecraft.recipe.RecipeType;
+import net.minecraft.recipe.input.CraftingRecipeInput;
 import net.minecraft.screen.CraftingScreenHandler;
 import net.minecraft.screen.ScreenHandler;
 import net.minecraft.screen.ScreenHandlerContext;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
+
+import java.util.Optional;
 
 public class PolymTableScreenHandler extends CraftingScreenHandler {
     private final PlayerEntity customPlayer;
@@ -44,9 +48,21 @@ public class PolymTableScreenHandler extends CraftingScreenHandler {
                                     CraftingResultInventory resultInventory,
                                     RecipeEntry<CraftingRecipe> recipe) {
         ItemStack itemStack = ItemStack.EMPTY;
+        ServerPlayerEntity serverPlayerEntity = (ServerPlayerEntity)player;
+        CraftingRecipeInput craftingRecipeInput = craftingInventory.createRecipeInput();
         resultInventory.setStack(0, itemStack);
         handler.setPreviousTrackedSlot(0, itemStack);
-
+        Optional<RecipeEntry<CraftingRecipe>> optional = world.getServer().getRecipeManager().getFirstMatch(RecipeType.CRAFTING, craftingRecipeInput, world, recipe);
+        if (optional.isPresent()) {
+            RecipeEntry<CraftingRecipe> recipeEntry = (RecipeEntry<CraftingRecipe>)optional.get();
+            CraftingRecipe craftingRecipe = recipeEntry.value();
+            if (resultInventory.shouldCraftRecipe(serverPlayerEntity, recipeEntry)) {
+                ItemStack itemStack2 = craftingRecipe.craft(craftingRecipeInput, world.getRegistryManager());
+                if (itemStack2.isItemEnabled(world.getEnabledFeatures())) {
+                    itemStack = itemStack2;
+                }
+            }
+        }
         if (player instanceof ServerPlayerEntity serverPlayer) {
             serverPlayer.networkHandler.sendPacket(
                     new ScreenHandlerSlotUpdateS2CPacket(handler.syncId, handler.nextRevision(), 0, itemStack)

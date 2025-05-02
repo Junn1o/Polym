@@ -1,5 +1,5 @@
 {
-  "type": "polymcoin:polym_table",
+  "type": "minecraft:crafting_shapeless",
   "category": "ingredients",
   "ingredients": [
     "polymcoin:gold_big_coin"

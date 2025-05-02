@@ -3,7 +3,6 @@ package com.junnio.polycoin;
 import com.junnio.polycoin.block.ModBlocks;
 import com.junnio.polycoin.item.ModItemGroups;
 import com.junnio.polycoin.item.ModItems;
-import com.junnio.polycoin.recipe.ModRecipeTypes;
 import com.junnio.polycoin.recipe.ModRecipes;
 import net.fabricmc.api.ModInitializer;
 
@@ -19,7 +18,6 @@ public class PoLymCoin implements ModInitializer {
 		ModItems.initialize();
 		ModBlocks.initialize();
 		ModItemGroups.initialize();
-		ModRecipes.registerRecipes();
-		ModRecipeTypes.registerRecipes();
+		ModRecipes.initialize();
 	}
 }

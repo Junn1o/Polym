@@ -39,7 +39,7 @@ public class ModItemGroups {
                     entries.add(ModItems.GOLD_COIN);
                     entries.add(ModItems.GOLD_COIN_PILE);
                     entries.add(ModItems.GOLD_BIG_COIN);
-                    //entries.add(ModBlocks.POLYM_TABLE);
+                    entries.add(ModBlocks.POLYM_TABLE);
                 });
     }
 }

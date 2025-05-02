@@ -3,10 +3,13 @@ package com.junnio.polycoin.block;
 import com.junnio.polycoin.PoLymCoin;
 import net.minecraft.block.AbstractBlock;
 import net.minecraft.block.Block;
+import net.minecraft.item.BlockItem;
+import net.minecraft.item.Item;
 import net.minecraft.registry.Registries;
 import net.minecraft.registry.Registry;
 import net.minecraft.registry.RegistryKey;
 import net.minecraft.registry.RegistryKeys;
+import net.minecraft.screen.ScreenHandlerType;
 import net.minecraft.sound.BlockSoundGroup;
 import net.minecraft.util.Identifier;
 import org.spongepowered.include.com.google.common.base.Function;
@@ -50,11 +53,16 @@ public class ModBlocks {
         RegistryKey<Block> blockKey = RegistryKey.of(RegistryKeys.BLOCK, Identifier.of(PoLymCoin.MOD_ID, name));
         Block block = blockFactory.apply(settings.registryKey(blockKey));
         Registry.register(Registries.BLOCK, blockKey, block);
+
+        RegistryKey<Item> itemKey = RegistryKey.of(RegistryKeys.ITEM, Identifier.of(PoLymCoin.MOD_ID, name));
+        BlockItem blockItem = new BlockItem(block, new Item.Settings().registryKey(itemKey));
+        Registry.register(Registries.ITEM, itemKey, blockItem);
+
         return block;
     }
     public static final Block POLYM_TABLE = ModBlocks.register(
             "polym_table",
-            Block::new,
+            PolymTableBlock::new,
             AbstractBlock.Settings.create()
                     .sounds(BlockSoundGroup.GRASS)
                     .strength(1.5F)

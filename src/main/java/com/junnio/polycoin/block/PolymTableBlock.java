@@ -1,6 +1,5 @@
-package com.junnio.polycoin;
+package com.junnio.polycoin.block;
 
-import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.CraftingTableBlock;
 import net.minecraft.entity.player.PlayerEntity;
@@ -20,15 +19,6 @@ public class PolymTableBlock extends CraftingTableBlock {
 
     public PolymTableBlock(Settings settings) {
         super(settings);
-    }
-    public ActionResult onUse(BlockState state, World world, BlockPos pos, PlayerEntity player, Hand hand, BlockHitResult hit) {
-        if (world.isClient) {
-            return ActionResult.SUCCESS;
-        } else {
-            player.openHandledScreen(state.createScreenHandlerFactory(world, pos));
-            player.incrementStat(Stats.INTERACT_WITH_CRAFTING_TABLE);
-            return ActionResult.CONSUME;
-        }
     }
 
     @Override
