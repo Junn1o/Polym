@@ -11,6 +11,7 @@ import net.minecraft.registry.RegistryKey;
 import net.minecraft.registry.RegistryKeys;
 import net.minecraft.screen.ScreenHandlerType;
 import net.minecraft.sound.BlockSoundGroup;
+import net.minecraft.sound.SoundEvents;
 import net.minecraft.util.Identifier;
 import org.spongepowered.include.com.google.common.base.Function;
 
@@ -64,7 +65,8 @@ public class ModBlocks {
             "polym_table",
             PolymTableBlock::new,
             AbstractBlock.Settings.create()
-                    .sounds(BlockSoundGroup.GRASS)
+                    .sounds(BlockSoundGroup.STONE)
+
                     .strength(1.5F)
                     .requiresTool()
     );

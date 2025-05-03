@@ -1,5 +1,7 @@
 package com.junnio.polycoin.recipe;
 
+import com.junnio.polycoin.PoLymCoin;
+import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.item.ItemStack;
@@ -7,34 +9,57 @@ import net.minecraft.network.RegistryByteBuf;
 import net.minecraft.network.codec.PacketCodec;
 import net.minecraft.recipe.*;
 import net.minecraft.recipe.book.RecipeBookCategory;
+import net.minecraft.recipe.input.CraftingRecipeInput;
 import net.minecraft.registry.RegistryWrapper;
+import net.minecraft.util.Identifier;
 import net.minecraft.world.World;
 
-public record PolymTableCraftingRecipe (Ingredient inputItem, ItemStack output) implements Recipe<PolymTableCraftingRecipeInput> {
+import java.util.Map;
+
+public class PolymTableCraftingRecipe implements Recipe<CraftingRecipeInput> {
+
+    private final Ingredient inputA;
+    private final Ingredient inputB;
+    private final ItemStack outputStack;
+    public PolymTableCraftingRecipe(Ingredient inputA, Ingredient inputB, ItemStack outputStack) {
+        this.inputA = inputA;
+        this.inputB = inputB;
+        this.outputStack = outputStack;
+    }
+    public Ingredient getInputA() {
+        return inputA;
+    }
+
+    public Ingredient getInputB() {
+        return inputB;
+    }
+    public ItemStack getOutputStack() {
+        return outputStack;
+    }
     @Override
-    public boolean matches(PolymTableCraftingRecipeInput input, World world) {
-        if (!(input instanceof PolymTableCraftingRecipeInput)) {
-            return false;
-        }
-        if(world.isClient()) {
-            return false;
-        }
-        return inputItem.test(input.getStackInSlot(0));
+    public boolean matches(CraftingRecipeInput input, World world) {
+        if (input.size() < 2) return false;
+        return inputA.equals(input.getStackInSlot(0)) && inputB.equals(input.getStackInSlot(1));
     }
 
     @Override
-    public ItemStack craft(PolymTableCraftingRecipeInput input, RegistryWrapper.WrapperLookup registries) {
-        return output.copy();
+    public ItemStack craft(CraftingRecipeInput input, RegistryWrapper.WrapperLookup registries) {
+        return outputStack.copy();
     }
 
     @Override
-    public RecipeSerializer<? extends Recipe<PolymTableCraftingRecipeInput>> getSerializer() {
-        return ModRecipes.POLYM_CRAFTING_SERIALIZER;
+    public boolean isIgnoredInRecipeBook() {
+        return Recipe.super.isIgnoredInRecipeBook();
     }
 
     @Override
-    public RecipeType<? extends Recipe<PolymTableCraftingRecipeInput>> getType() {
-        return ModRecipes.POLYM_CRAFTING_TYPE;
+    public RecipeSerializer<? extends Recipe<CraftingRecipeInput>> getSerializer() {
+        return PolymRecipeSerializer.INSTANCE;
+    }
+
+    @Override
+    public RecipeType<? extends Recipe<CraftingRecipeInput>> getType() {
+        return Type.INSTANCE;
     }
 
     @Override
@@ -46,27 +71,10 @@ public record PolymTableCraftingRecipe (Ingredient inputItem, ItemStack output) 
     public RecipeBookCategory getRecipeBookCategory() {
         return null;
     }
-
-    public static class Serializer implements RecipeSerializer<PolymTableCraftingRecipe> {
-        public static final MapCodec<PolymTableCraftingRecipe> CODEC = RecordCodecBuilder.mapCodec(inst -> inst.group(
-                Ingredient.CODEC.fieldOf("ingredient").forGetter(PolymTableCraftingRecipe::inputItem),
-                ItemStack.CODEC.fieldOf("result").forGetter(PolymTableCraftingRecipe::output)
-        ).apply(inst, PolymTableCraftingRecipe::new));
-
-        public static final PacketCodec<RegistryByteBuf, PolymTableCraftingRecipe> STREAM_CODEC =
-                PacketCodec.tuple(
-                        Ingredient.PACKET_CODEC, PolymTableCraftingRecipe::inputItem,
-                        ItemStack.PACKET_CODEC, PolymTableCraftingRecipe::output,
-                        PolymTableCraftingRecipe::new);
-
-        @Override
-        public MapCodec<PolymTableCraftingRecipe> codec() {
-            return CODEC;
-        }
-
-        @Override
-        public PacketCodec<RegistryByteBuf, PolymTableCraftingRecipe> packetCodec() {
-            return STREAM_CODEC;
-        }
+    public static class Type implements RecipeType<PolymTableCraftingRecipe> {
+        // Define ExampleRecipe.Type as a singleton by making its constructor private and exposing an instance.
+        private Type() {}
+        public static final Type INSTANCE = new Type();
+        public static final String ID = "two_slot_recipe";
     }
 }
