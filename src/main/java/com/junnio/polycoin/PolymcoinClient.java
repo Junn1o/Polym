@@ -1,4 +1,11 @@
 package com.junnio.polycoin;
 
-public class PolymcoinClient {
+import net.fabricmc.api.ClientModInitializer;
+
+public class PolymcoinClient implements ClientModInitializer {
+
+    @Override
+    public void onInitializeClient() {
+
+    }
 }

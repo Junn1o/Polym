@@ -1,0 +1,9 @@
+{
+  "type": "polymcoin:tool_use",
+  "item": "minecraft:redstone",
+  "tool": "#minecraft:logs",
+  "result": {
+    "id": "minecraft:cobblestone",
+    "count": 2
+  }
+}

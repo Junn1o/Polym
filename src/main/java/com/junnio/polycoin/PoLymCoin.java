@@ -4,6 +4,7 @@ import com.junnio.polycoin.block.ModBlocks;
 import com.junnio.polycoin.item.ModItemGroups;
 import com.junnio.polycoin.item.ModItems;
 import com.junnio.polycoin.recipe.ModRecipes;
+import com.junnio.polycoin.screen.ModScreenHandlers;
 import net.fabricmc.api.ModInitializer;
 
 import org.slf4j.Logger;
@@ -19,5 +20,7 @@ public class PoLymCoin implements ModInitializer {
 		ModBlocks.initialize();
 		ModItemGroups.initialize();
 		ModRecipes.initialize();
+		//ModBlockEntities.initialize();
+		ModScreenHandlers.initialize();
 	}
 }
