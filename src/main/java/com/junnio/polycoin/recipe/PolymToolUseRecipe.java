@@ -17,12 +17,12 @@ import net.minecraft.world.World;
 
 import java.util.List;
 
-public record PolymToolUseRecipe(Ingredient baseItem, Ingredient tool, ItemStack result) implements Recipe<CraftingRecipeInput> {
+public record PolymToolUseRecipe(Ingredient baseItem, ItemStack result) implements Recipe<CraftingRecipeInput> {
 
     @Override
     public boolean matches(CraftingRecipeInput input, World world) {
         if (!input.isEmpty() && input.size() > 1) {
-            return baseItem.test(input.getStackInSlot(0)) && tool.test(input.getStackInSlot(1));
+            return baseItem.test(input.getStackInSlot(0));
         }
         return false;
     }
@@ -44,7 +44,7 @@ public record PolymToolUseRecipe(Ingredient baseItem, Ingredient tool, ItemStack
 
     @Override
     public IngredientPlacement getIngredientPlacement() {
-        return IngredientPlacement.forShapeless(List.of(this.baseItem, this.tool));
+        return IngredientPlacement.forShapeless(List.of(this.baseItem));
     }
 
     @Override
@@ -55,16 +55,8 @@ public record PolymToolUseRecipe(Ingredient baseItem, Ingredient tool, ItemStack
     public static class Serializer implements RecipeSerializer<PolymToolUseRecipe> {
         public static final MapCodec<PolymToolUseRecipe> CODEC = RecordCodecBuilder.mapCodec(inst -> inst.group(
                 Ingredient.CODEC.fieldOf("item").forGetter(PolymToolUseRecipe::baseItem),
-                Ingredient.CODEC.fieldOf("tool").forGetter(PolymToolUseRecipe::tool),
                 ItemStack.CODEC.fieldOf("result").forGetter(PolymToolUseRecipe::result)
         ).apply(inst, PolymToolUseRecipe::new));
-
-        public static final PacketCodec<RegistryByteBuf, PolymToolUseRecipe> STREAM_CODEC =
-                PacketCodec.tuple(
-                        Ingredient.PACKET_CODEC, PolymToolUseRecipe::baseItem,
-                        Ingredient.PACKET_CODEC, PolymToolUseRecipe::tool,
-                        ItemStack.PACKET_CODEC, PolymToolUseRecipe::result,
-                        PolymToolUseRecipe::new);
 
         @Override
         public MapCodec<PolymToolUseRecipe> codec() {
@@ -73,7 +65,7 @@ public record PolymToolUseRecipe(Ingredient baseItem, Ingredient tool, ItemStack
 
         @Override
         public PacketCodec<RegistryByteBuf, PolymToolUseRecipe> packetCodec() {
-            return STREAM_CODEC;
+            return null;
         }
     }
 }
