@@ -30,5 +30,4 @@ public class PolymTableScreen extends HandledScreen<PolymTableScreenHandler> {
         RenderSystem.setShaderTexture(0, TEXTURE);
         context.drawTexture(RenderLayer::getGuiTextured, TEXTURE,this.x, this.y, 0F, 0F, this.backgroundWidth, this.backgroundHeight,256,256);
     }
-
 }

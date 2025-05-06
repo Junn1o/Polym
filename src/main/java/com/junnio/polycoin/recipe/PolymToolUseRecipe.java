@@ -21,7 +21,10 @@ public record PolymToolUseRecipe(Ingredient baseItem, Ingredient tool, ItemStack
 
     @Override
     public boolean matches(CraftingRecipeInput input, World world) {
-        return baseItem.test(input.getStackInSlot(0)) && tool.test(input.getStackInSlot(1));
+        if (!input.isEmpty() && input.size() > 1) {
+            return baseItem.test(input.getStackInSlot(0)) && tool.test(input.getStackInSlot(1));
+        }
+        return false;
     }
 
     @Override
@@ -41,7 +44,7 @@ public record PolymToolUseRecipe(Ingredient baseItem, Ingredient tool, ItemStack
 
     @Override
     public IngredientPlacement getIngredientPlacement() {
-        return null;
+        return IngredientPlacement.forShapeless(List.of(this.baseItem, this.tool));
     }
 
     @Override

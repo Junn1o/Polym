@@ -36,7 +36,7 @@ public class PolymTableBlock extends Block {
                     System.out.println("Crafting inventory size (Server): " + craftingInventory.size());
                     System.out.println("Result inventory size (Server): " + resultInventory.size());
 
-                    return new PolymTableScreenHandler(syncId, inv, craftingInventory, resultInventory);
+                    return new PolymTableScreenHandler(syncId, inv);
                 }
 
                 @Override

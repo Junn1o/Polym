@@ -1,10 +1,9 @@
 {
-  "inputA" : {
-    "item": "minecraft:redstone"
-  },
-  "inputB": {
-    "tag": "minecraft:logs"
-  },
-  "outputItem": "minecraft:cobblestone",
-  "outputAmount": "20"
+  "type": "polymcoin:tool_use",
+  "item": "minecraft:redstone",
+  "tool": "#minecraft:logs",
+  "result": {
+    "id": "minecraft:cobblestone",
+    "count": 2
+  }
 }

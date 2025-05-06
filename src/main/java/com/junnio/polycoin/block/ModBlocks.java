@@ -71,7 +71,7 @@ public class ModBlocks {
                     .requiresTool()
     );
     public static void initialize() {
-
+        PoLymCoin.LOGGER.info("Registering Custom Recipes for " + PoLymCoin.MOD_ID + POLYM_TABLE);
     }
 }
 
