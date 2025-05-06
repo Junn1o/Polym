@@ -19,10 +19,10 @@
 			"com.junnio.polycoin.PoLymCoin"
 		],
 		"client": [
-			"com.junnio.PolymcoinClient"
+			"com.junnio.polymclient.PolymcoinClient"
 		],
 		"fabric-datagen": [
-			"com.junnio.PolymcoinDataGenerator"
+			"com.junnio.polymclient.PolymcoinDataGenerator"
 		]
 	},
 	"mixins": [

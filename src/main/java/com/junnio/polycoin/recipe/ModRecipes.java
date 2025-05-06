@@ -15,14 +15,14 @@ public class ModRecipes {
 //    public static final RecipeSerializer<PolymTableCraftingRecipe> POLYM_CRAFTING_SERIALIZER = Registry.register(
 //            Registries.RECIPE_SERIALIZER, Identifier.of(PoLymCoin.MOD_ID, "polym_table"),
 //            new PolymTableCraftingRecipe.Serializer());
-public static final RecipeSerializer<PolymCoinRecipe> TOOL_USE_RECIPE_SERIALIZER = Registry.register(
+public static final RecipeSerializer<PolymToolUseRecipe> TOOL_USE_RECIPE_SERIALIZER = Registry.register(
         Registries.RECIPE_SERIALIZER, Identifier.of(PoLymCoin.MOD_ID, "tool_use"),
-        new PolymCoinRecipe.Serializer());
-//    public static final RecipeType<PolymTableCraftingRecipe> POLYM_CRAFTING_TYPE = Registry.register(
-//            Registries.RECIPE_TYPE, Identifier.of(PoLymCoin.MOD_ID, "polym_table"), new RecipeType<PolymTableCraftingRecipe>() {
-//                @Override
-//                public String toString() {
-//                    return "polym_table";
-//                }
-//            });
+        new PolymToolUseRecipe.Serializer());
+    public static final RecipeType<PolymToolUseRecipe> POLYM_CRAFTING_TYPE = Registry.register(
+            Registries.RECIPE_TYPE, Identifier.of(PoLymCoin.MOD_ID, "tool_use"), new RecipeType<PolymToolUseRecipe>() {
+                @Override
+                public String toString() {
+                    return "tool_use";
+                }
+            });
 }

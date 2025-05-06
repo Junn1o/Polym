@@ -1,24 +1,22 @@
 package com.junnio.polycoin.block;
-import com.junnio.polycoin.block.entity.ModBlockEntities;
-import com.junnio.polycoin.block.entity.PolymTableBlockEntity;
-import com.mojang.serialization.MapCodec;
-import net.minecraft.block.BlockRenderType;
+import com.junnio.polycoin.screen.PolymTableScreenHandler;
+import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
-import net.minecraft.block.BlockWithEntity;
-import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.entity.player.PlayerInventory;
+import net.minecraft.inventory.CraftingInventory;
+import net.minecraft.inventory.CraftingResultInventory;
+import net.minecraft.inventory.Inventory;
+import net.minecraft.item.ItemStack;
 import net.minecraft.screen.NamedScreenHandlerFactory;
 import net.minecraft.screen.ScreenHandler;
-import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.Text;
 import net.minecraft.util.ActionResult;
-import net.minecraft.util.ItemScatterer;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
-import org.jetbrains.annotations.Nullable;
 
-public class PolymTableBlock extends BlockWithEntity {
+public class PolymTableBlock extends Block {
     private static final Text TITLE = Text.translatable("container.polym_table");
 
     public PolymTableBlock(Settings settings) {
@@ -26,46 +24,26 @@ public class PolymTableBlock extends BlockWithEntity {
     }
 
     @Override
-    protected MapCodec<? extends PolymTableBlock> getCodec() {
-        return createCodec(PolymTableBlock::new);
-    }
-
-    @Override
-    protected boolean hasComparatorOutput(BlockState state) {
-        return super.hasComparatorOutput(state);
-    }
-    @Override
-    public int getComparatorOutput(BlockState state, World world, BlockPos pos) {
-        return ScreenHandler.calculateComparatorOutput(world.getBlockEntity(pos));
-    }
-
-    @Override
-    protected void onStateReplaced(BlockState state, World world, BlockPos pos, BlockState newState, boolean moved) {
-        if (moved) {
-            BlockEntity blockEntity = world.getBlockEntity(pos);
-            if (blockEntity instanceof PolymTableBlockEntity polymTableBlockEntity) {
-                ItemScatterer.spawn(world, pos, polymTableBlockEntity);
-                world.updateComparators(pos,this);
-            }
-            super.onStateReplaced(state, world, pos, newState, true);
-        }
-    }
-
-    @Override
-    public BlockEntity createBlockEntity(BlockPos pos, BlockState state) {
-        return new PolymTableBlockEntity(pos, state);
-    }
-    @Override
-    public BlockRenderType getRenderType(BlockState state) {
-        return BlockRenderType.MODEL;
-    }
-    @Override
-    public ActionResult onUse(BlockState state, World world, BlockPos pos, PlayerEntity player, BlockHitResult hit) {
+    protected ActionResult onUse(BlockState state, World world, BlockPos pos, PlayerEntity player, BlockHitResult hit) {
         if (!world.isClient) {
-            NamedScreenHandlerFactory screenHandlerFactory = state.createScreenHandlerFactory(world, pos);
-            if (screenHandlerFactory != null) {
-                player.openHandledScreen(screenHandlerFactory);
-            }
+            player.openHandledScreen(new NamedScreenHandlerFactory() {
+                @Override
+                public ScreenHandler createMenu(int syncId, PlayerInventory inv, PlayerEntity player) {
+                    // Create the crafting and result inventories for this screen handler
+                    CraftingInventory craftingInventory = new CraftingInventory(null, 3, 3); // 3x3 crafting grid
+                    CraftingResultInventory resultInventory = new CraftingResultInventory();
+                    System.out.println("Creating PolymTableScreenHandler on " + (world.isClient ? "Client" : "Server"));
+                    System.out.println("Crafting inventory size (Server): " + craftingInventory.size());
+                    System.out.println("Result inventory size (Server): " + resultInventory.size());
+
+                    return new PolymTableScreenHandler(syncId, inv, craftingInventory, resultInventory);
+                }
+
+                @Override
+                public Text getDisplayName() {
+                    return TITLE;
+                }
+            });
         }
         return ActionResult.SUCCESS;
     }

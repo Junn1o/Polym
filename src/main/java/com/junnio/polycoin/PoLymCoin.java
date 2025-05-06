@@ -1,7 +1,6 @@
 package com.junnio.polycoin;
 
 import com.junnio.polycoin.block.ModBlocks;
-import com.junnio.polycoin.block.entity.ModBlockEntities;
 import com.junnio.polycoin.item.ModItemGroups;
 import com.junnio.polycoin.item.ModItems;
 import com.junnio.polycoin.recipe.ModRecipes;
@@ -21,7 +20,7 @@ public class PoLymCoin implements ModInitializer {
 		ModBlocks.initialize();
 		ModItemGroups.initialize();
 		ModRecipes.initialize();
-		ModBlockEntities.initialize();
+		//ModBlockEntities.initialize();
 		ModScreenHandlers.initialize();
 	}
 }

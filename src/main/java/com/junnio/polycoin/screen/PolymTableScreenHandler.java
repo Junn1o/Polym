@@ -1,78 +1,119 @@
 package com.junnio.polycoin.screen;
 
-import com.junnio.polycoin.block.entity.PolymTableBlockEntity;
-import net.minecraft.block.entity.BlockEntity;
+import com.junnio.polycoin.recipe.ModRecipes;
+import com.junnio.polycoin.recipe.PolymCoinRecipe;
+import com.junnio.polycoin.recipe.PolymToolUseRecipe;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.PlayerInventory;
+import net.minecraft.inventory.CraftingInventory;
+import net.minecraft.inventory.CraftingResultInventory;
 import net.minecraft.inventory.Inventory;
+import net.minecraft.inventory.SimpleInventory;
 import net.minecraft.item.ItemStack;
+import net.minecraft.recipe.RecipeEntry;
+import net.minecraft.recipe.input.CraftingRecipeInput;
 import net.minecraft.screen.ScreenHandler;
-import net.minecraft.screen.ScreenHandlerContext;
+import net.minecraft.screen.ScreenHandlerType;
 import net.minecraft.screen.slot.Slot;
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.world.World;
+
+import java.util.Optional;
 
 public class PolymTableScreenHandler extends ScreenHandler {
-    private final Inventory inventory;
-    public final PolymTableBlockEntity blockEntity;
+    private final World world;
+    private final CraftingInventory craftingInventory;
+    private final Inventory resultInventory;
 
-    public PolymTableScreenHandler(int syncId, PlayerInventory inventory, BlockPos pos) {
-        this(syncId, inventory, inventory.player.getWorld().getBlockEntity(pos));
+    public PolymTableScreenHandler(int syncId, PlayerInventory playerInventory) {
+        this(syncId, playerInventory, new CraftingInventory(null, 3, 3), new CraftingResultInventory());
+        System.out.println("Creating PolymTableScreenHandler on " + (world.isClient ? "Client" : "Server"));
+        System.out.println("Crafting inventory size: " + craftingInventory.size());
+        System.out.println("Result inventory size: " + resultInventory.size());
     }
 
-    public PolymTableScreenHandler(int syncId, PlayerInventory playerInventory, BlockEntity blockEntity) {
-        super(ModScreenHandlers.TACKLEBOX_SCREEN_HANDLER, syncId);
-        this.inventory = ((Inventory) blockEntity);
-        this.blockEntity = ((PolymTableBlockEntity) blockEntity);
+    public PolymTableScreenHandler(int syncId, PlayerInventory playerInventory, CraftingInventory craftingInventory, CraftingResultInventory resultInventory) {
+        super(ModScreenHandlers.POLYM_TABLE_SCREEN_HANDLER, syncId);
+        this.craftingInventory = craftingInventory;
+        this.resultInventory = resultInventory;
+        this.world = playerInventory.player.getWorld();
+        for (int row = 0; row < 3; row++) {
+            for (int col = 0; col < 3; col++) {
+                this.addSlot(new Slot(craftingInventory, col + row * 3, 30 + col * 18, 17 + row * 18));
+            }
+        }
 
-        this.addSlot(new Slot(inventory, 0, 54, 34));
-        this.addSlot(new Slot(inventory, 1, 70, 34));
-        this.addSlot(new Slot(inventory, 2, 87, 34));
-        this.addSlot(new Slot(inventory, 3, 104, 34));
-        addPlayerInventory(playerInventory);
-        addPlayerHotbar(playerInventory);
+        this.addSlot(new Slot(resultInventory, 0, 124, 35) {
+            @Override
+            public boolean canInsert(ItemStack stack) {
+                return false; // Prevent manual insertion
+            }
+
+            @Override
+            public void onTakeItem(PlayerEntity player, ItemStack stack) {
+                // Call onCrafted() when items are crafted
+                stack.onCraftByPlayer(player.getWorld(), player, stack.getCount());
+                onCrafted(stack, stack.getCount());
+                super.onTakeItem(player, stack);
+            }
+        });
+
+
+        // Add player inventory slots (your layout logic here)
+        for (int row = 0; row < 3; row++) {
+            for (int col = 0; col < 9; col++) { // 27 slots
+                this.addSlot(new Slot(playerInventory, col + row * 9 + 9, 8 + col * 18, 84 + row * 18));
+            }
+        }
+
+
+        // Add player hotbar slots
+        for (int col = 0; col < 9; col++) { // 9 slots
+            this.addSlot(new Slot(playerInventory, col, 8 + col * 18, 142));
+        }
+
+
     }
 
     @Override
-    public ItemStack quickMove(PlayerEntity player, int invSlot) {
+    public ItemStack quickMove(PlayerEntity player, int slot) {
+        return ItemStack.EMPTY;
+    }
 
-        ItemStack newStack = ItemStack.EMPTY;
-        Slot slot = this.slots.get(invSlot);
-        if (slot.hasStack()) {
-            ItemStack originalStack = slot.getStack();
-            newStack = originalStack.copy();
-            if (invSlot < this.inventory.size()) {
-                if (!this.insertItem(originalStack, this.inventory.size(), this.slots.size(), true)) {
-                    return ItemStack.EMPTY;
-                }
-            } else if (!this.insertItem(originalStack, 0, this.inventory.size(), false)) {
-                return ItemStack.EMPTY;
-            }
-
-            if (originalStack.isEmpty()) {
-                slot.setStack(ItemStack.EMPTY);
-            } else {
-                slot.markDirty();
-            }
-        }
-        return newStack;
+    @Override
+    public void onContentChanged(Inventory inventory) {
+        super.onContentChanged(inventory);
     }
 
     @Override
     public boolean canUse(PlayerEntity player) {
-        return this.inventory.canPlayerUse(player);
+        return true; // Logic to determine if player can access
     }
-
-    private void addPlayerInventory(PlayerInventory playerInventory) {
-        for (int i = 0; i < 3; ++i) {
-            for (int l = 0; l < 9; ++l) {
-                this.addSlot(new Slot(playerInventory, l + i * 9 + 9, 8 + l * 18, 84 + i * 18));
+    private void onCrafted() {
+        // Add logic to handle grid inputs (e.g., consume items)
+        for (int i = 0; i < craftingInventory.size(); ++i) {
+            ItemStack itemStack = craftingInventory.getStack(i);
+            if (!itemStack.isEmpty()) {
+                itemStack.decrement(1); // Consume one item
             }
         }
     }
 
-    private void addPlayerHotbar(PlayerInventory playerInventory) {
-        for (int i = 0; i < 9; ++i) {
-            this.addSlot(new Slot(playerInventory, i, 8 + i * 18, 142));
+    public void updateRecipeOutput() {
+        CraftingRecipeInput recipeInput = craftingInventory.createRecipeInput();
+        Optional<RecipeEntry<PolymToolUseRecipe>> optional = this.world.getServer().getRecipeManager()
+                .getFirstMatch(ModRecipes.POLYM_CRAFTING_TYPE, recipeInput, this.world);
+
+        if (optional.isPresent()) {
+            PolymToolUseRecipe recipe = optional.get().value();
+            this.resultInventory.setStack(0, recipe.craft(recipeInput, null)); // Set crafted output
+        } else {
+            this.resultInventory.setStack(0, ItemStack.EMPTY); // No valid recipe
         }
     }
+
+
+
+
+
+
 }

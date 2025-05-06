@@ -80,7 +80,8 @@ public record PolymCoinRecipe(Ingredient item, Ingredient tool, ItemStack output
 
     @Override
     public RecipeSerializer<? extends CraftingRecipe> getSerializer() {
-        return ModRecipes.TOOL_USE_RECIPE_SERIALIZER;
+        //return ModRecipes.TOOL_USE_RECIPE_SERIALIZER;
+        return null;
     }
 
     @Override

@@ -1,10 +1,7 @@
 package com.junnio.polycoin;
 
 import net.fabricmc.api.ClientModInitializer;
-import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;
 
-@Environment(EnvType.CLIENT)
 public class PolymcoinClient implements ClientModInitializer {
 
     @Override
