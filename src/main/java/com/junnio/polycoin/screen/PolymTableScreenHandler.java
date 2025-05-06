@@ -1,19 +1,16 @@
 package com.junnio.polycoin.screen;
 
 import com.junnio.polycoin.recipe.ModRecipes;
-import com.junnio.polycoin.recipe.PolymCoinRecipe;
 import com.junnio.polycoin.recipe.PolymToolUseRecipe;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.inventory.CraftingInventory;
 import net.minecraft.inventory.CraftingResultInventory;
 import net.minecraft.inventory.Inventory;
-import net.minecraft.inventory.SimpleInventory;
 import net.minecraft.item.ItemStack;
 import net.minecraft.recipe.RecipeEntry;
 import net.minecraft.recipe.input.CraftingRecipeInput;
 import net.minecraft.screen.ScreenHandler;
-import net.minecraft.screen.ScreenHandlerType;
 import net.minecraft.screen.slot.Slot;
 import net.minecraft.world.World;
 
