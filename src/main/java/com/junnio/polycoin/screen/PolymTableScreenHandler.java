@@ -14,6 +14,7 @@ import net.minecraft.screen.ScreenHandler;
 import net.minecraft.screen.slot.Slot;
 import net.minecraft.world.World;
 
+import java.util.Objects;
 import java.util.Optional;
 
 public class PolymTableScreenHandler extends ScreenHandler {
@@ -83,14 +84,71 @@ public class PolymTableScreenHandler extends ScreenHandler {
     }
 
     @Override
-    public ItemStack quickMove(PlayerEntity player, int slot) {
-        return ItemStack.EMPTY;
+    public ItemStack quickMove(PlayerEntity player, int slotIndex) {
+        ItemStack itemStack = ItemStack.EMPTY;
+        Slot slot = this.slots.get(slotIndex);
+
+        if (slot.hasStack()) {
+            ItemStack slotStack = slot.getStack();
+            itemStack = slotStack.copy();
+
+            if (slotIndex == 0) {
+                if (!this.insertItem(slotStack, 10, 46, true)) {
+                    return ItemStack.EMPTY;
+                }
+                slot.onQuickTransfer(slotStack, itemStack);
+            }
+            // If clicking from player inventory, try to move to crafting grid
+            else if (slotIndex >= 10 && slotIndex < 46) {
+                if (!this.insertItem(slotStack, 1, 10, false)) {
+                    if (slotIndex < 37) {
+                        if (!this.insertItem(slotStack, 37, 46, false)) {
+                            return ItemStack.EMPTY;
+                        }
+                    } else if (!this.insertItem(slotStack, 10, 37, false)) {
+                        return ItemStack.EMPTY;
+                    }
+                }
+            }
+            // If clicking from crafting grid, try to move to player inventory
+            else if (!this.insertItem(slotStack, 10, 46, false)) {
+                return ItemStack.EMPTY;
+            }
+
+            if (slotStack.isEmpty()) {
+                slot.setStack(ItemStack.EMPTY);
+            } else {
+                slot.markDirty();
+            }
+
+            if (slotStack.getCount() == itemStack.getCount()) {
+                return ItemStack.EMPTY;
+            }
+
+            slot.onTakeItem(player, slotStack);
+        }
+
+        return itemStack;
+
+    }
+
+    @Override
+    public void onClosed(PlayerEntity player) {
+        for (int i = 0; i < craftingInventory.size(); i++) {
+            ItemStack itemStack = craftingInventory.removeStack(i);
+            if (!itemStack.isEmpty()) {
+                player.getInventory().insertStack(itemStack);
+                if (!itemStack.isEmpty()) {
+                    player.dropItem(itemStack, false);
+                }
+            }
+        }
     }
 
     @Override
     public void onContentChanged(Inventory inventory) {
         if (inventory == craftingInventory) {
-            updateRecipeOutput(); // Trigger crafting logic
+            updateRecipeOutput();
         }
     }
 
@@ -111,7 +169,7 @@ public class PolymTableScreenHandler extends ScreenHandler {
     public void updateRecipeOutput() {
         if (!this.world.isClient) {
             CraftingRecipeInput recipeInput = craftingInventory.createRecipeInput();
-            Optional<RecipeEntry<PolymToolUseRecipe>> optional = this.world.getServer()
+            Optional<RecipeEntry<PolymToolUseRecipe>> optional = Objects.requireNonNull(this.world.getServer())
                     .getRecipeManager()
                     .getFirstMatch(ModRecipes.POLYM_CRAFTING_TYPE, recipeInput, this.world);
 

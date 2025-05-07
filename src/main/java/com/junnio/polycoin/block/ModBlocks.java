@@ -67,7 +67,6 @@ public class ModBlocks {
             PolymTableBlock::new,
             AbstractBlock.Settings.create()
                     .sounds(ModSounds.POLYM_TABLE_SOUND_GROUP)
-
                     .strength(1.5F)
                     .requiresTool()
     );
