@@ -1,6 +1,7 @@
 package com.junnio.polym.block;
 import com.junnio.polym.screen.PolymTableScreenHandler;
 import net.minecraft.block.Block;
+import net.minecraft.block.BlockRenderType;
 import net.minecraft.block.BlockState;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.PlayerInventory;
@@ -40,5 +41,15 @@ public class PolymTableBlock extends Block {
             });
         }
         return ActionResult.SUCCESS;
+    }
+
+    @Override
+    protected BlockRenderType getRenderType(BlockState state) {
+        return BlockRenderType.MODEL;
+    }
+
+    @Override
+    protected boolean isTransparent(BlockState state) {
+        return true;
     }
 }

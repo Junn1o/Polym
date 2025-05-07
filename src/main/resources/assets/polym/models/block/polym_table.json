@@ -7,6 +7,35 @@
     "particle": "polym:block/money_maker_side",
     "south": "polym:block/money_maker_side",
     "up": "polym:block/money_maker_top",
-    "west": "polym:block/money_maker_side"
-  }
+    "west": "polym:block/money_maker_side",
+    "emissive": "polym:block/money_maker_side_e"
+  },
+  "elements": [
+    {
+      "from": [0, 0, 0],
+      "to": [16, 16, 16],
+      "faces": {
+        "down":  {"uv": [0, 0, 16, 16], "texture": "#down"},
+        "up":    {"uv": [0, 0, 16, 16], "texture": "#up"},
+        "north": {"uv": [0, 0, 16, 16], "texture": "#north"},
+        "south": {"uv": [0, 0, 16, 16], "texture": "#south"},
+        "west":  {"uv": [0, 0, 16, 16], "texture": "#west"},
+        "east":  {"uv": [0, 0, 16, 16], "texture": "#east"}
+      }
+    },
+    {
+      "from": [0, 0, 0],
+      "to": [16, 16, 16],
+      "faces": {
+        "north": {"uv": [0, 0, 16, 16], "texture": "#emissive"},
+        "south": {"uv": [0, 0, 16, 16], "texture": "#emissive"},
+        "west":  {"uv": [0, 0, 16, 16], "texture": "#emissive"},
+        "east":  {"uv": [0, 0, 16, 16], "texture": "#emissive"}
+      },
+      "light_emission": 15,
+      "render_type": "translucent",
+      "emissive": true
+    }
+
+  ]
 }

@@ -64,15 +64,16 @@ public class ModBlocks {
             PolymTableBlock::new,
             AbstractBlock.Settings.create()
                     .sounds(ModSounds.POLYM_TABLE_SOUND_GROUP)
-                    .strength(1.0F)
+                    .strength(1.0F,3600000.0F)
                     .requiresTool()
                     .luminance((state) ->4)
-                    .emissiveLighting((state, world, pos) -> true)
-                    .postProcess((state, world, pos) -> true)
-                    //.lootTable()
+                    .nonOpaque()  // Add this
+                    .solidBlock((state, world, pos) -> true)  // Add this
+                    .suffocates((state, world, pos) -> true)  // Add this
+                    .blockVision((state, world, pos) -> true)
     );
     public static void initialize() {
-        Polym.LOGGER.info("Registering Custom Recipes for " + Polym.MOD_ID + POLYM_TABLE);
+        Polym.LOGGER.info("Registering Custom Recipes for " + Polym.MOD_ID);
     }
 }
 
