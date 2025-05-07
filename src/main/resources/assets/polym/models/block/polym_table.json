@@ -1,0 +1,12 @@
+{
+  "parent": "minecraft:block/cube",
+  "textures": {
+    "down": "polym:block/money_maker_bottom",
+    "east": "polym:block/money_maker_side",
+    "north": "polym:block/money_maker_side",
+    "particle": "polym:block/money_maker_side",
+    "south": "polym:block/money_maker_side",
+    "up": "polym:block/money_maker_top",
+    "west": "polym:block/money_maker_side"
+  }
+}

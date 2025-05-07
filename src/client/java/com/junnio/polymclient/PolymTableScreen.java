@@ -1,7 +1,6 @@
 package com.junnio.polymclient;
 
-import com.junnio.polycoin.PoLymCoin;
-import com.junnio.polycoin.screen.PolymTableScreenHandler;
+import com.junnio.polym.screen.PolymTableScreenHandler;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.ingame.HandledScreen;

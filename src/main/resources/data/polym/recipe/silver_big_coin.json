@@ -1,0 +1,14 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "ingredients",
+  "ingredients": [
+    "polym:silver_coin_pile",
+    "polym:silver_coin_pile",
+    "polym:silver_coin_pile",
+    "polym:silver_coin_pile"
+  ],
+  "result": {
+    "count": 1,
+    "id": "polym:silver_big_coin"
+  }
+}

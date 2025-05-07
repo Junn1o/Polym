@@ -1,0 +1,15 @@
+{
+  "item.polym.copper_coin": "1 Poly",
+  "item.polym.copper_coin_pile": "5 Poly",
+  "item.polym.copper_big_coin": "20 Poly",
+  "item.polym.silver_coin": "100 Poly",
+  "item.polym.silver_coin_pile": "500 Poly",
+  "item.polym.silver_big_coin": "2000 Poly",
+  "item.polym.gold_coin": "10000 Poly",
+  "item.polym.gold_coin_pile": "50000 Poly",
+  "item.polym.gold_big_coin": "200000 Poly",
+  "item.polym.polym_table": "Polym Table",
+  "itemGroup.polymgroup": "Polym Groups",
+  "container.polym_table": "Polym Crafting",
+  "block.polym.polym_table": "Bàn In Tiền"
+}

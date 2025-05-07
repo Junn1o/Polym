@@ -1,0 +1,7 @@
+{
+  "variants": {
+    "": {
+      "model": "polym:block/polym_table"
+    }
+  }
+}

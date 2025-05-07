@@ -16,7 +16,7 @@
 	"environment": "*",
 	"entrypoints": {
 		"main": [
-			"com.junnio.polycoin.PoLymCoin"
+			"com.junnio.polym.Polym"
 		],
 		"client": [
 			"com.junnio.polymclient.PolymcoinClient"

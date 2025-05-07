@@ -1,6 +1,6 @@
 package com.junnio.polymclient;
 
-import com.junnio.polycoin.screen.ModScreenHandlers;
+import com.junnio.polym.screen.ModScreenHandlers;
 import net.fabricmc.api.ClientModInitializer;
 import net.minecraft.client.gui.screen.ingame.HandledScreens;
 

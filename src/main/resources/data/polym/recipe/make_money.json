@@ -1,0 +1,16 @@
+{
+  "type": "polym:polym_recipe",
+  "pattern": [
+    " #G",
+    "###",
+    " #G"
+  ],
+  "key": {
+    "#": "minecraft:iron_ingot",
+    "G": "minecraft:cobblestone"
+  },
+  "result": {
+    "id": "polym:gold_coin",
+    "count": 1
+  }
+}
