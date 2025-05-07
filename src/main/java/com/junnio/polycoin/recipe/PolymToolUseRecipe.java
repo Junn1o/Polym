@@ -1,5 +1,6 @@
 package com.junnio.polycoin.recipe;
 
+import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.inventory.RecipeInputInventory;
@@ -15,18 +16,55 @@ import net.minecraft.util.Identifier;
 import net.minecraft.util.collection.DefaultedList;
 import net.minecraft.world.World;
 
-import java.util.List;
+import java.util.*;
 
-public record PolymToolUseRecipe(Ingredient baseItem, Ingredient tool, ItemStack result) implements Recipe<CraftingRecipeInput> {
+public record PolymToolUseRecipe(String[] pattern, Map<String, Ingredient> key, ItemStack result) implements Recipe<CraftingRecipeInput> {
 
     @Override
     public boolean matches(CraftingRecipeInput input, World world) {
-        if (!input.isEmpty() && input.size() > 1) {
-            return baseItem.test(input.getStackInSlot(0)) && tool.test(input.getStackInSlot(1));
+        if (input.getWidth() != 3 || input.getHeight() != 3) {
+            return false;
+        }
+
+        for (int i = 0; i <= input.getWidth() - pattern[0].length(); ++i) {
+            for (int j = 0; j <= input.getHeight() - pattern.length; ++j) {
+                if (matches(input, i, j, true) || matches(input, i, j, false)) {
+                    return true;
+                }
+            }
         }
         return false;
     }
 
+    private boolean matches(CraftingRecipeInput inv, int offsetX, int offsetY, boolean flipped) {
+        for (int i = 0; i < inv.getWidth(); i++) {
+            for (int j = 0; j < inv.getHeight(); j++) {
+                int x = i - offsetX;
+                int y = j - offsetY;
+
+                String symbolStr = " ";
+                if (x >= 0 && y >= 0 && x < pattern[0].length() && y < pattern.length) {
+                    char symbol = flipped ?
+                            pattern[y].charAt(pattern[0].length() - 1 - x) :
+                            pattern[y].charAt(x);
+                    symbolStr = String.valueOf(symbol);
+                }
+
+                ItemStack stackInSlot = inv.getStackInSlot(i + j * inv.getWidth());
+                if (symbolStr.equals(" ")) {
+                    if (!stackInSlot.isEmpty()) {
+                        return false;
+                    }
+                } else {
+                    Ingredient ingredient = key.get(symbolStr);
+                    if (ingredient == null || !ingredient.test(stackInSlot)) {
+                        return false;
+                    }
+                }
+            }
+        }
+        return true;
+    }
     @Override
     public ItemStack craft(CraftingRecipeInput input, RegistryWrapper.WrapperLookup registries) {
         return result.copy();
@@ -44,8 +82,31 @@ public record PolymToolUseRecipe(Ingredient baseItem, Ingredient tool, ItemStack
 
     @Override
     public IngredientPlacement getIngredientPlacement() {
-        return IngredientPlacement.forShapeless(List.of(this.baseItem, this.tool));
+        List<Optional<Ingredient>> ingredients = new ArrayList<>();
+        int width = pattern[0].length();
+        int height = pattern.length;
+
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                char symbol = pattern[y].charAt(x);
+                if (symbol == ' ') {
+                    // Skip empty slots entirely instead of adding empty ingredients
+                    ingredients.add(Optional.empty());
+                } else {
+                    Ingredient ingredient = key.get(String.valueOf(symbol));
+                    if (ingredient != null) {
+                        ingredients.add(Optional.of(ingredient));
+                    } else {
+                        ingredients.add(Optional.empty());
+                    }
+                }
+            }
+        }
+
+        return IngredientPlacement.forMultipleSlots(ingredients);
+
     }
+
 
     @Override
     public RecipeBookCategory getRecipeBookCategory() {
@@ -53,18 +114,21 @@ public record PolymToolUseRecipe(Ingredient baseItem, Ingredient tool, ItemStack
     }
 
     public static class Serializer implements RecipeSerializer<PolymToolUseRecipe> {
+        private static final Codec<Ingredient> INGREDIENT_CODEC = Codec.STRING.xmap(
+                str -> Ingredient.ofItems(net.minecraft.registry.Registries.ITEM.get(Identifier.of(str))),
+                ingredient -> ingredient.getMatchingItems().findFirst()
+                        .map(entry -> net.minecraft.registry.Registries.ITEM.getId(entry.value()).toString())
+                        .orElse("minecraft:air")
+        );
+
         public static final MapCodec<PolymToolUseRecipe> CODEC = RecordCodecBuilder.mapCodec(inst -> inst.group(
-                Ingredient.CODEC.fieldOf("item").forGetter(PolymToolUseRecipe::baseItem),
-                Ingredient.CODEC.fieldOf("tool").forGetter(PolymToolUseRecipe::tool),
+                Codec.STRING.listOf().fieldOf("pattern").xmap(
+                        list -> list.toArray(new String[0]),
+                        Arrays::asList
+                ).forGetter(recipe -> recipe.pattern),
+                Codec.unboundedMap(Codec.STRING, INGREDIENT_CODEC).fieldOf("key").forGetter(PolymToolUseRecipe::key),
                 ItemStack.CODEC.fieldOf("result").forGetter(PolymToolUseRecipe::result)
         ).apply(inst, PolymToolUseRecipe::new));
-
-        public static final PacketCodec<RegistryByteBuf, PolymToolUseRecipe> STREAM_CODEC =
-                PacketCodec.tuple(
-                        Ingredient.PACKET_CODEC, PolymToolUseRecipe::baseItem,
-                        Ingredient.PACKET_CODEC, PolymToolUseRecipe::tool,
-                        ItemStack.PACKET_CODEC, PolymToolUseRecipe::result,
-                        PolymToolUseRecipe::new);
 
         @Override
         public MapCodec<PolymToolUseRecipe> codec() {
@@ -73,7 +137,7 @@ public record PolymToolUseRecipe(Ingredient baseItem, Ingredient tool, ItemStack
 
         @Override
         public PacketCodec<RegistryByteBuf, PolymToolUseRecipe> packetCodec() {
-            return STREAM_CODEC;
+            return null;
         }
     }
 }

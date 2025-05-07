@@ -66,7 +66,6 @@ public class ModBlocks {
             PolymTableBlock::new,
             AbstractBlock.Settings.create()
                     .sounds(BlockSoundGroup.STONE)
-
                     .strength(1.5F)
                     .requiresTool()
     );
