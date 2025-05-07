@@ -32,10 +32,6 @@ public class PolymTableBlock extends Block {
                     // Create the crafting and result inventories for this screen handler
                     CraftingInventory craftingInventory = new CraftingInventory(null, 3, 3); // 3x3 crafting grid
                     CraftingResultInventory resultInventory = new CraftingResultInventory();
-                    System.out.println("Creating PolymTableScreenHandler on " + (world.isClient ? "Client" : "Server"));
-                    System.out.println("Crafting inventory size (Server): " + craftingInventory.size());
-                    System.out.println("Result inventory size (Server): " + resultInventory.size());
-
                     return new PolymTableScreenHandler(syncId, inv);
                 }
 
