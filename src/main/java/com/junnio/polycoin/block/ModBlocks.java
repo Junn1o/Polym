@@ -1,6 +1,7 @@
 package com.junnio.polycoin.block;
 
 import com.junnio.polycoin.PoLymCoin;
+import com.junnio.polycoin.sound.ModSounds;
 import net.minecraft.block.AbstractBlock;
 import net.minecraft.block.Block;
 import net.minecraft.item.BlockItem;
@@ -65,7 +66,7 @@ public class ModBlocks {
             "polym_table",
             PolymTableBlock::new,
             AbstractBlock.Settings.create()
-                    .sounds(BlockSoundGroup.STONE)
+                    .sounds(ModSounds.POLYM_TABLE_SOUND_GROUP)
                     .strength(1.5F)
                     .requiresTool()
     );

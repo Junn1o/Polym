@@ -102,9 +102,7 @@ public record PolymToolUseRecipe(String[] pattern, Map<String, Ingredient> key, 
                 }
             }
         }
-
         return IngredientPlacement.forMultipleSlots(ingredients);
-
     }
 
 
@@ -122,6 +120,7 @@ public record PolymToolUseRecipe(String[] pattern, Map<String, Ingredient> key, 
         );
 
         public static final MapCodec<PolymToolUseRecipe> CODEC = RecordCodecBuilder.mapCodec(inst -> inst.group(
+
                 Codec.STRING.listOf().fieldOf("pattern").xmap(
                         list -> list.toArray(new String[0]),
                         Arrays::asList
