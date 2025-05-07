@@ -2,6 +2,7 @@ package com.junnio.polym.screen;
 
 import com.junnio.polym.recipe.ModRecipes;
 import com.junnio.polym.recipe.PolymRecipe;
+import com.junnio.polym.sound.ModSounds;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.inventory.CraftingInventory;
@@ -38,6 +39,9 @@ public class PolymTableScreenHandler extends ScreenHandler {
             @Override
             public void onTakeItem(PlayerEntity player, ItemStack stack) {
                 // Reduce ingredients when the crafted item is taken from the output slot
+                if (player.getWorld().isClient()) {
+                    player.playSound(ModSounds.POLYM_ON_CRAFT, 1.0F, 1.0F);
+                }
                 consumeIngredients();
                 super.onTakeItem(player, stack);
             }
