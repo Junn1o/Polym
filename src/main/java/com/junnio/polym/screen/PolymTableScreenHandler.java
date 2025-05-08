@@ -43,6 +43,7 @@ public class PolymTableScreenHandler extends ScreenHandler {
                     player.playSound(ModSounds.POLYM_ON_CRAFT, 1.0F, 1.0F);
                 }
                 consumeIngredients();
+                updateRecipeOutput();
                 super.onTakeItem(player, stack);
             }
         });
@@ -187,10 +188,4 @@ public class PolymTableScreenHandler extends ScreenHandler {
             }
         }
     }
-
-
-
-
-
-
 }

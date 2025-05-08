@@ -65,7 +65,7 @@ public class ModBlocks {
             PolymTableBlock::new,
             AbstractBlock.Settings.create()
                     .sounds(ModSounds.POLYM_TABLE_SOUND_GROUP)
-                    .strength(1.0F,3600000.0F)
+                    .strength(1.2F,3600000.0F)
                     .requiresTool()
                     .luminance((state) ->4)
                     .nonOpaque()
