@@ -32,14 +32,14 @@ public class ModBlocks {
             PolymTableBlock::new,
             AbstractBlock.Settings.create()
                     .sounds(ModSounds.POLYM_TABLE_SOUND_GROUP)
-                    .strength(1.2F,3600000.0F)
+                    .strength(50.0F,1200.0F)
                     .requiresTool()
                     .luminance((state) ->4)
                     .nonOpaque()
                     .solidBlock((state, world, pos) -> true)
                     .suffocates((state, world, pos) -> true)
                     .blockVision((state, world, pos) -> true)
-            ,new Item.Settings().rarity(Rarity.EPIC)
+            ,new Item.Settings().rarity(Rarity.RARE)
     );
     public static void initialize() {
         Polym.LOGGER.info("Registering Custom Recipes for " + Polym.MOD_ID);
