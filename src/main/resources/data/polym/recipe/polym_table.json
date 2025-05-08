@@ -1,0 +1,16 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "###",
+    "#N#",
+    "###"
+  ],
+  "key": {
+    "#": "minecraft:chiseled_deepslate",
+    "N": "minecraft:netherite_block"
+  },
+  "result": {
+    "count": 1,
+    "id": "polym:polym_table"
+  }
+}

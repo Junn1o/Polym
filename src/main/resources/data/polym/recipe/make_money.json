@@ -1,0 +1,16 @@
+{
+  "type": "polym:polym_recipe",
+  "pattern": [
+    "AAA",
+    "###",
+    "AAA"
+  ],
+  "key": {
+    "#": "minecraft:diamond",
+    "A": "minecraft:amethyst_cluster"
+  },
+  "result": {
+    "id": "polym:silver_coin",
+    "count": 1
+  }
+}
