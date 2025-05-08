@@ -12,9 +12,7 @@ public class ModRecipes {
 
         Polym.LOGGER.info("Registering Custom Recipes for " + Polym.MOD_ID);
     }
-//    public static final RecipeSerializer<PolymTableCraftingRecipe> POLYM_CRAFTING_SERIALIZER = Registry.register(
-//            Registries.RECIPE_SERIALIZER, Identifier.of(Polym.MOD_ID, "polym_table"),
-//            new PolymTableCraftingRecipe.Serializer());
+
 public static final RecipeSerializer<PolymRecipe> TOOL_USE_RECIPE_SERIALIZER = Registry.register(
         Registries.RECIPE_SERIALIZER, Identifier.of(Polym.MOD_ID, "polym_recipe"),
         new PolymRecipe.Serializer());
