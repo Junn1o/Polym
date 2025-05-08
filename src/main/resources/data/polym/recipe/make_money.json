@@ -1,16 +1,16 @@
 {
   "type": "polym:polym_recipe",
   "pattern": [
-    " #G",
+    "AAA",
     "###",
-    " #G"
+    "AAA"
   ],
   "key": {
-    "#": "minecraft:iron_ingot",
-    "G": "minecraft:cobblestone"
+    "#": "minecraft:diamond",
+    "A": "minecraft:amethyst_cluster"
   },
   "result": {
-    "id": "polym:gold_coin",
+    "id": "polym:silver_coin",
     "count": 1
   }
 }

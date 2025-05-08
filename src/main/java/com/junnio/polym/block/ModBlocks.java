@@ -11,6 +11,7 @@ import net.minecraft.registry.Registry;
 import net.minecraft.registry.RegistryKey;
 import net.minecraft.registry.RegistryKeys;
 import net.minecraft.util.Identifier;
+import net.minecraft.util.Rarity;
 import org.spongepowered.include.com.google.common.base.Function;
 
 public class ModBlocks {
@@ -48,13 +49,13 @@ public class ModBlocks {
 //            itemGroup.add(ModBlocks.Polym_Table.asItem());
 //        });
 //    }
-    public static Block register(String name, Function<Block.Settings, Block> blockFactory, Block.Settings settings) {
+    public static Block register(String name, Function<Block.Settings, Block> blockFactory, Block.Settings settings, Item.Settings itemSettings) {
         RegistryKey<Block> blockKey = RegistryKey.of(RegistryKeys.BLOCK, Identifier.of(Polym.MOD_ID, name));
         Block block = blockFactory.apply(settings.registryKey(blockKey));
         Registry.register(Registries.BLOCK, blockKey, block);
 
         RegistryKey<Item> itemKey = RegistryKey.of(RegistryKeys.ITEM, Identifier.of(Polym.MOD_ID, name));
-        BlockItem blockItem = new BlockItem(block, new Item.Settings().registryKey(itemKey));
+        BlockItem blockItem = new BlockItem(block, itemSettings.registryKey(itemKey));
         Registry.register(Registries.ITEM, itemKey, blockItem);
 
         return block;
@@ -67,10 +68,11 @@ public class ModBlocks {
                     .strength(1.0F,3600000.0F)
                     .requiresTool()
                     .luminance((state) ->4)
-                    .nonOpaque()  // Add this
-                    .solidBlock((state, world, pos) -> true)  // Add this
-                    .suffocates((state, world, pos) -> true)  // Add this
+                    .nonOpaque()
+                    .solidBlock((state, world, pos) -> true)
+                    .suffocates((state, world, pos) -> true)
                     .blockVision((state, world, pos) -> true)
+            ,new Item.Settings().rarity(Rarity.EPIC)
     );
     public static void initialize() {
         Polym.LOGGER.info("Registering Custom Recipes for " + Polym.MOD_ID);

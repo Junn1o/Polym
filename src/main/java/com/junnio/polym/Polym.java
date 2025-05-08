@@ -21,7 +21,6 @@ public class Polym implements ModInitializer {
 		ModBlocks.initialize();
 		ModItemGroups.initialize();
 		ModRecipes.initialize();
-		//ModBlockEntities.initialize();
 		ModScreenHandlers.initialize();
 		ModSounds.initialize();
 	}
