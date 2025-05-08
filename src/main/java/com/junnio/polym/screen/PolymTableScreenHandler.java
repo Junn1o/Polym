@@ -46,6 +46,10 @@ public class PolymTableScreenHandler extends ScreenHandler {
                 updateRecipeOutput();
                 super.onTakeItem(player, stack);
             }
+            @Override
+            public boolean canInsert(ItemStack stack) {
+                return false;
+            }
         });
 
         // Add crafting grid slots (input)
@@ -97,13 +101,14 @@ public class PolymTableScreenHandler extends ScreenHandler {
             ItemStack slotStack = slot.getStack();
             itemStack = slotStack.copy();
 
+            // This is the result slot
             if (slotIndex == 0) {
                 if (!this.insertItem(slotStack, 10, 46, true)) {
                     return ItemStack.EMPTY;
                 }
                 slot.onQuickTransfer(slotStack, itemStack);
             }
-            // If clicking from player inventory, try to move to crafting grid
+            // If clicking from player inventory, try to move to crafting grid (slots 1-9)
             else if (slotIndex >= 10 && slotIndex < 46) {
                 if (!this.insertItem(slotStack, 1, 10, false)) {
                     if (slotIndex < 37) {
@@ -134,7 +139,6 @@ public class PolymTableScreenHandler extends ScreenHandler {
         }
 
         return itemStack;
-
     }
 
     @Override

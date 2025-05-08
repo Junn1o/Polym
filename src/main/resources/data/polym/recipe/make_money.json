@@ -7,7 +7,7 @@
   ],
   "key": {
     "#": "minecraft:diamond",
-    "A": "minecraft:amethyst_cluster"
+    "A": "minecraft:amethyst_shard"
   },
   "result": {
     "id": "polym:silver_coin",
