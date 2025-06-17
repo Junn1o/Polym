@@ -13,14 +13,9 @@ public class ModRecipes {
         Polym.LOGGER.info("Registering Custom Recipes for " + Polym.MOD_ID);
     }
 
-public static final RecipeSerializer<PolymRecipe> TOOL_USE_RECIPE_SERIALIZER = Registry.register(
+public static final RecipeSerializer<PolymRecipe> RECIPE_SERIALIZER = Registry.register(
         Registries.RECIPE_SERIALIZER, Identifier.of(Polym.MOD_ID, "polym_recipe"),
         new PolymRecipe.Serializer());
     public static final RecipeType<PolymRecipe> POLYM_CRAFTING_TYPE = Registry.register(
-            Registries.RECIPE_TYPE, Identifier.of(Polym.MOD_ID, "polym_recipe"), new RecipeType<PolymRecipe>() {
-                @Override
-                public String toString() {
-                    return "tool_use";
-                }
-            });
+            Registries.RECIPE_TYPE, Identifier.of(Polym.MOD_ID, "polym_recipe"), new RecipeType<PolymRecipe>() {});
 }

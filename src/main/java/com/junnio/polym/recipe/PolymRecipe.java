@@ -69,7 +69,7 @@ public record PolymRecipe(String[] pattern, Map<String, Ingredient> key, ItemSta
 
     @Override
     public RecipeSerializer<? extends Recipe<CraftingRecipeInput>> getSerializer() {
-        return ModRecipes.TOOL_USE_RECIPE_SERIALIZER;
+        return ModRecipes.RECIPE_SERIALIZER;
     }
 
     @Override
