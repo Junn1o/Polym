@@ -8,7 +8,6 @@ import com.junnio.polym.screen.ModScreenHandlers;
 import com.junnio.polym.sound.ModSounds;
 import net.fabricmc.api.ModInitializer;
 
-import net.minecraft.recipe.ServerRecipeManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

@@ -3,7 +3,7 @@
 	"package": "com.junnio.mixin",
 	"compatibilityLevel": "JAVA_21",
 	"mixins": [
-		"CrafterBlockEntityMixin"
+		"CrafterBlockMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1
