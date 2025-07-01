@@ -9,8 +9,10 @@ import net.minecraft.util.Identifier;
 
 public class ModScreenHandlers{
     public static final ScreenHandlerType<PolymTableScreenHandler> POLYM_TABLE_SCREEN_HANDLER =
-            new ScreenHandlerType<>(PolymTableScreenHandler::new, FeatureSet.empty());
-
+            new ScreenHandlerType<>(
+                    (syncId, inventory) -> new PolymTableScreenHandler(syncId, inventory, inventory.player),
+                    FeatureSet.empty()
+            );
 
     public static void initialize() {
         Registry.register(Registries.SCREEN_HANDLER, Identifier.of(Polym.MOD_ID, "polym_table"), POLYM_TABLE_SCREEN_HANDLER);
