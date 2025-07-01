@@ -3,13 +3,13 @@
 	"id": "polymcoin",
 	"version": "${version}",
 	"name": "polymcoin",
-	"description": "This is an example description! Tell everyone what your mod is about!",
+	"description": "This is a coin mod that not impact to gameplay, make server have economy",
 	"authors": [
-		"Me!"
+		"Junn1o!"
 	],
 	"contact": {
-		"homepage": "https://fabricmc.net/",
-		"sources": "https://github.com/FabricMC/fabric-example-mod"
+		"homepage": "https://github.com/Junn1o/Polym",
+		"sources": "https://github.com/Junn1o/Polym"
 	},
 	"license": "CC0-1.0",
 	"icon": "assets/polymcoin/icon.png",

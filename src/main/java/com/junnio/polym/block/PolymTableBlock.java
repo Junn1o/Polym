@@ -31,7 +31,7 @@ public class PolymTableBlock extends Block {
                     // Create the crafting and result inventories for this screen handler
                     CraftingInventory craftingInventory = new CraftingInventory(null, 3, 3); // 3x3 crafting grid
                     CraftingResultInventory resultInventory = new CraftingResultInventory();
-                    return new PolymTableScreenHandler(syncId, inv);
+                    return new PolymTableScreenHandler(syncId, inv, player);
                 }
 
                 @Override
