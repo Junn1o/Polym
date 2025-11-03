@@ -1,13 +1,12 @@
 package com.junnio.polymclient;
 
 import com.junnio.polym.screen.PolymTableScreenHandler;
-import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.ingame.HandledScreen;
-import net.minecraft.client.render.RenderLayer;
 import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
+import net.minecraft.client.gl.RenderPipelines;
 
 
 public class PolymTableScreen extends HandledScreen<PolymTableScreenHandler> {
@@ -25,8 +24,6 @@ public class PolymTableScreen extends HandledScreen<PolymTableScreenHandler> {
 
     @Override
     protected void drawBackground(DrawContext context, float delta, int mouseX, int mouseY) {
-        RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
-        RenderSystem.setShaderTexture(0, TEXTURE);
-        context.drawTexture(RenderLayer::getGuiTextured, TEXTURE,this.x, this.y, 0F, 0F, this.backgroundWidth, this.backgroundHeight,256,256);
+        context.drawTexture(RenderPipelines.GUI_TEXTURED, TEXTURE,this.x, this.y, 0F, 0F, this.backgroundWidth, this.backgroundHeight,256,256);
     }
 }
