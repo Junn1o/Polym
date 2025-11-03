@@ -26,7 +26,7 @@ public class PolymTableScreen extends HandledScreen<PolymTableScreenHandler> {
     @Override
     protected void drawBackground(DrawContext context, float delta, int mouseX, int mouseY) {
         RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
-        RenderSystem.setShaderTexture(0, TEXTURE);
+        //RenderSystem.setShaderTexture(0, TEXTURE);
         context.drawTexture(RenderLayer::getGuiTextured, TEXTURE,this.x, this.y, 0F, 0F, this.backgroundWidth, this.backgroundHeight,256,256);
     }
 }
