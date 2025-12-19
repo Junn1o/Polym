@@ -29,7 +29,7 @@ public class PolymTableScreenHandler extends ScreenHandler {
     public PolymTableScreenHandler(int syncId, PlayerInventory playerInventory) {
         super(ModScreenHandlers.POLYM_TABLE_SCREEN_HANDLER, syncId);
 
-        this.world = playerInventory.player.getWorld();
+        this.world = playerInventory.player.getEntityWorld();
 
         this.resultInventory = new CraftingResultInventory();
 
@@ -38,7 +38,7 @@ public class PolymTableScreenHandler extends ScreenHandler {
         this.addSlot(new Slot(this.resultInventory, 0, 124, 35) {
             @Override
             public void onTakeItem(PlayerEntity player, ItemStack stack) {
-                if (player.getWorld().isClient()) {
+                if (player.getEntityWorld().isClient()) {
                     player.playSound(ModSounds.POLYM_ON_CRAFT, 1.0F, 1.0F);
                 }
                 consumeIngredients();
@@ -158,7 +158,7 @@ public class PolymTableScreenHandler extends ScreenHandler {
     }
 
     public void updateRecipeOutput() {
-        if (!this.world.isClient) {
+        if (!this.world.isClient()) {
             CraftingRecipeInput recipeInput = craftingInventory.createRecipeInput();
 
             Optional<RecipeEntry<PolymRecipe>> polymRecipe = this.world.getServer()
