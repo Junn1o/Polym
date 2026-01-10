@@ -9,8 +9,6 @@ import net.minecraft.util.Identifier;
 
 public class ModRecipes {
     public static void initialize(){
-
-        Polym.LOGGER.info("Registering Custom Recipes for " + Polym.MOD_ID);
     }
 
 public static final RecipeSerializer<PolymRecipe> RECIPE_SERIALIZER = Registry.register(

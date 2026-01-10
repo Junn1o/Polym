@@ -25,11 +25,12 @@ public class PolymTableScreenHandler extends ScreenHandler {
     private final World world;
     private final CraftingInventory craftingInventory;
     private final Inventory resultInventory;
-
-    public PolymTableScreenHandler(int syncId, PlayerInventory playerInventory) {
+    private final PlayerEntity playerentity;
+    public PolymTableScreenHandler(int syncId, PlayerInventory playerInventory, PlayerEntity playerentity) {
         super(ModScreenHandlers.POLYM_TABLE_SCREEN_HANDLER, syncId);
 
         this.world = playerInventory.player.getEntityWorld();
+        this.playerentity = playerentity;
 
         this.resultInventory = new CraftingResultInventory();
 
@@ -160,7 +161,6 @@ public class PolymTableScreenHandler extends ScreenHandler {
     public void updateRecipeOutput() {
         if (!this.world.isClient()) {
             CraftingRecipeInput recipeInput = craftingInventory.createRecipeInput();
-
             Optional<RecipeEntry<PolymRecipe>> polymRecipe = this.world.getServer()
                     .getRecipeManager()
                     .getFirstMatch(ModRecipes.POLYM_CRAFTING_TYPE, recipeInput, this.world);
@@ -175,12 +175,25 @@ public class PolymTableScreenHandler extends ScreenHandler {
                     .getRecipeManager()
                     .getFirstMatch(RecipeType.CRAFTING, recipeInput, this.world);
 
-            if (vanillaRecipe.isPresent() && vanillaRecipe.get().id().getValue().getNamespace().equals("polym")) {
-                ItemStack result = vanillaRecipe.get().value().craft(recipeInput, this.world.getRegistryManager());
-                this.resultInventory.setStack(0, result);
-                return;
-            }
+            if (vanillaRecipe.isPresent()) {
 
+                // 3. Special guild recipes check
+                if (playerentity.getCommandTags().contains("Guild") &&
+                        vanillaRecipe.get().id().getValue().getNamespace().equals("polym") &&
+                        vanillaRecipe.get().id().getValue().getPath().startsWith("guild_")) {
+                    ItemStack result = vanillaRecipe.get().value().craft(recipeInput, this.world.getRegistryManager());
+                    this.resultInventory.setStack(0, result);
+                    return;
+                }
+
+                // 4. Regular polymorph vanilla recipes (non-guild)
+                if (vanillaRecipe.get().id().getValue().getNamespace().equals("polym") &&
+                        !vanillaRecipe.get().id().getValue().getPath().startsWith("guild_")) {
+                    ItemStack result = vanillaRecipe.get().value().craft(recipeInput, this.world.getRegistryManager());
+                    this.resultInventory.setStack(0, result);
+                    return;
+                }
+            }
             this.resultInventory.setStack(0, ItemStack.EMPTY);
         }
     }

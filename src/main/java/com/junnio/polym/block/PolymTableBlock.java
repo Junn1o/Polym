@@ -26,7 +26,7 @@ public class PolymTableBlock extends Block {
             player.openHandledScreen(new NamedScreenHandlerFactory() {
                 @Override
                 public ScreenHandler createMenu(int syncId, PlayerInventory inv, PlayerEntity player) {
-                    return new PolymTableScreenHandler(syncId, inv);
+                    return new PolymTableScreenHandler(syncId, inv, player);
                 }
 
                 @Override

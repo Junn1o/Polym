@@ -42,7 +42,6 @@ public class ModBlocks {
             ,new Item.Settings().rarity(Rarity.RARE)
     );
     public static void initialize() {
-        Polym.LOGGER.info("Registering Custom Recipes for " + Polym.MOD_ID);
     }
 }
 
