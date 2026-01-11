@@ -41,13 +41,13 @@ public final class RecipeConfigLoader {
             Path example = CONFIG_DIR.resolve("example_copper_coin.json");
             if (Files.exists(example)) return;
 
+            // NOTE: This uses a 1x1 pattern so it can match anywhere in the 3x3 grid,
+            // and it does NOT require all other slots to be empty.
             JsonObject root = new JsonObject();
             root.addProperty("id", "example_copper_coin");
 
             JsonArray pattern = new JsonArray();
-            pattern.add("   ");
-            pattern.add(" C ");
-            pattern.add("   ");
+            pattern.add("C");
             root.add("pattern", pattern);
 
             JsonObject key = new JsonObject();
@@ -55,7 +55,7 @@ public final class RecipeConfigLoader {
             root.add("key", key);
 
             JsonObject result = new JsonObject();
-            result.addProperty("item", Polym.MOD_ID + ":copper_coin");
+            result.addProperty("item", "minecraft:amethyst_shard");
             result.addProperty("count", 1);
             root.add("result", result);
 
@@ -97,7 +97,7 @@ public final class RecipeConfigLoader {
         JsonObject root = JsonParser.parseString(Files.readString(path)).getAsJsonObject();
 
         String id = requireString(root, "id");
-        String[] pattern = parsePattern(root);
+        String[] pattern = trimPattern(parsePattern(root));
         Map<String, Ingredient> key = parseKey(root);
         ItemStack result = parseResult(root);
 
@@ -115,6 +115,62 @@ public final class RecipeConfigLoader {
             out[i] = arr.get(i).getAsString();
         }
         return out;
+    }
+
+    /**
+     * Trims fully-empty rows/columns around the pattern so recipes behave like vanilla shaped recipes.
+     * Example:
+     *  ["   ", " C ", "   "] -> ["C"]
+     *  [" C "] -> ["C"]
+     */
+    private static String[] trimPattern(String[] pattern) {
+        if (pattern.length == 0) return pattern;
+
+        int height = pattern.length;
+        int width = pattern[0].length();
+        for (String row : pattern) {
+            if (row.length() != width) {
+                throw new JsonSyntaxException("All pattern rows must have the same length");
+            }
+        }
+
+        int top = 0;
+        int bottom = height - 1;
+        int left = 0;
+        int right = width - 1;
+
+        // trim empty rows from top
+        while (top <= bottom && isRowEmpty(pattern[top])) top++;
+        // trim empty rows from bottom
+        while (bottom >= top && isRowEmpty(pattern[bottom])) bottom--;
+
+        // trim empty columns from left/right
+        while (left <= right && isColEmpty(pattern, top, bottom, left)) left++;
+        while (right >= left && isColEmpty(pattern, top, bottom, right)) right--;
+
+        if (top > bottom || left > right) {
+            throw new JsonSyntaxException("Pattern cannot be entirely empty");
+        }
+
+        String[] out = new String[(bottom - top) + 1];
+        for (int y = top; y <= bottom; y++) {
+            out[y - top] = pattern[y].substring(left, right + 1);
+        }
+        return out;
+    }
+
+    private static boolean isRowEmpty(String row) {
+        for (int i = 0; i < row.length(); i++) {
+            if (row.charAt(i) != ' ') return false;
+        }
+        return true;
+    }
+
+    private static boolean isColEmpty(String[] pattern, int top, int bottom, int col) {
+        for (int y = top; y <= bottom; y++) {
+            if (pattern[y].charAt(col) != ' ') return false;
+        }
+        return true;
     }
 
     private static Map<String, Ingredient> parseKey(JsonObject root) {
