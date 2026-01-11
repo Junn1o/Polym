@@ -21,7 +21,7 @@ public class PolymTableScreenHandler extends ScreenHandler {
     private final CraftingInventory craftingInventory;
     private final Inventory resultInventory;
 
-    public PolymTableScreenHandler(int syncId, PlayerInventory playerInventory) {
+    public PolymTableScreenHandler(int syncId, PlayerInventory playerInventory, PlayerEntity player) {
         super(ModScreenHandlers.POLYM_TABLE_SCREEN_HANDLER, syncId);
 
         this.world = playerInventory.player.getEntityWorld();
@@ -156,9 +156,10 @@ public class PolymTableScreenHandler extends ScreenHandler {
     public void updateRecipeOutput() {
         if (!this.world.isClient()) {
             CraftingRecipeInput recipeInput = craftingInventory.createRecipeInput();
-
+            System.out.print("test1");
             Optional<PolymRecipe> recipe = PolymRecipeRegistry.getFirstMatch(recipeInput, this.world);
             if (recipe.isPresent()) {
+                System.out.print("test2");
                 ItemStack result = recipe.get().craft(recipeInput, this.world.getRegistryManager());
                 this.resultInventory.setStack(0, result);
                 return;
