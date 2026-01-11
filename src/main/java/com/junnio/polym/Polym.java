@@ -25,5 +25,6 @@ public class Polym implements ModInitializer {
 		ModScreenHandlers.initialize();
 		ModSounds.initialize();
 		ModCommand.register();
+		LoggerFactory.getLogger(MOD_ID).info("Polym Initialized!");
 	}
 }

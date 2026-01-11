@@ -15,26 +15,27 @@ public class ModCommand {
             dispatcher.register(CommandManager.literal("guild").then(CommandManager.literal("pass").then(CommandManager.argument("target", EntityArgumentType.player()).executes(ctx -> {
                 ServerCommandSource source = ctx.getSource();
                 ServerPlayerEntity from = source.getPlayerOrThrow();
-                ServerPlayerEntity to = EntityArgumentType.getPlayer(ctx, "target"); // target player [web:36]
+                ServerPlayerEntity to = EntityArgumentType.getPlayer(ctx, "target");
 
                 // must currently have the tag
-                if (!from.getCommandTags().contains(GUILD_TAG)) { // entity command tags [web:43]
-                    source.sendError(Text.literal("You don't have the Guild tag."));
+                if (!from.getCommandTags().contains(GUILD_TAG)) {
+                    source.sendError(Text.literal("Bạn là Guild Master hả?"));
                     return 0;
                 }
 
                 // optional: prevent passing to self
                 if (from == to) {
-                    source.sendError(Text.literal("Pick another player."));
+                    source.sendError(Text.literal("Chơi trò gì đây?"));
                     return 0;
                 }
 
                 // transfer
-                from.removeCommandTag(GUILD_TAG); // remove tag API exists on entity/player [web:40][web:43]
-                to.addCommandTag(GUILD_TAG);      // command tag set is exposed by Entity API [web:43]
+                from.removeCommandTag(GUILD_TAG);
+                to.addCommandTag(GUILD_TAG);
 
-                source.sendFeedback(() -> Text.literal("Passed Guild to " + to.getName().getString()), false);
-                to.sendMessage(Text.literal("You received Guild from " + from.getName().getString()));
+                source.sendFeedback(() -> Text.literal("Đã chuyển Guild Master " + to.getName().getString()), true);
+                to.sendMessage(Text.literal("Bạn đã được bầu là Guild Master " + from.getName().getString()));
+
                 return 1;
             }))));
         });
