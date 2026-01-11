@@ -1,7 +1,7 @@
 package com.junnio.polym.screen;
 
-import com.junnio.polym.recipe.ModRecipes;
 import com.junnio.polym.recipe.PolymRecipe;
+import com.junnio.polym.recipe.PolymRecipeRegistry;
 import com.junnio.polym.sound.ModSounds;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.PlayerInventory;
@@ -9,28 +9,22 @@ import net.minecraft.inventory.CraftingInventory;
 import net.minecraft.inventory.CraftingResultInventory;
 import net.minecraft.inventory.Inventory;
 import net.minecraft.item.ItemStack;
-import net.minecraft.recipe.CraftingRecipe;
-import net.minecraft.recipe.RecipeEntry;
-import net.minecraft.recipe.RecipeType;
 import net.minecraft.recipe.input.CraftingRecipeInput;
 import net.minecraft.screen.ScreenHandler;
 import net.minecraft.screen.slot.Slot;
-import net.minecraft.util.Identifier;
 import net.minecraft.world.World;
 
-import java.util.Objects;
 import java.util.Optional;
 
 public class PolymTableScreenHandler extends ScreenHandler {
     private final World world;
     private final CraftingInventory craftingInventory;
     private final Inventory resultInventory;
-    private final PlayerEntity playerentity;
-    public PolymTableScreenHandler(int syncId, PlayerInventory playerInventory, PlayerEntity playerentity) {
+
+    public PolymTableScreenHandler(int syncId, PlayerInventory playerInventory) {
         super(ModScreenHandlers.POLYM_TABLE_SCREEN_HANDLER, syncId);
 
         this.world = playerInventory.player.getEntityWorld();
-        this.playerentity = playerentity;
 
         this.resultInventory = new CraftingResultInventory();
 
@@ -69,6 +63,7 @@ public class PolymTableScreenHandler extends ScreenHandler {
         }
 
     }
+
     private void consumeIngredients() {
         for (int i = 0; i < craftingInventory.size(); i++) {
             ItemStack slotStack = craftingInventory.getStack(i);
@@ -161,39 +156,14 @@ public class PolymTableScreenHandler extends ScreenHandler {
     public void updateRecipeOutput() {
         if (!this.world.isClient()) {
             CraftingRecipeInput recipeInput = craftingInventory.createRecipeInput();
-            Optional<RecipeEntry<PolymRecipe>> polymRecipe = this.world.getServer()
-                    .getRecipeManager()
-                    .getFirstMatch(ModRecipes.POLYM_CRAFTING_TYPE, recipeInput, this.world);
 
-            if (polymRecipe.isPresent()) {
-                ItemStack result = polymRecipe.get().value().craft(recipeInput, this.world.getRegistryManager());
+            Optional<PolymRecipe> recipe = PolymRecipeRegistry.getFirstMatch(recipeInput, this.world);
+            if (recipe.isPresent()) {
+                ItemStack result = recipe.get().craft(recipeInput, this.world.getRegistryManager());
                 this.resultInventory.setStack(0, result);
                 return;
             }
 
-            Optional<RecipeEntry<CraftingRecipe>> vanillaRecipe = this.world.getServer()
-                    .getRecipeManager()
-                    .getFirstMatch(RecipeType.CRAFTING, recipeInput, this.world);
-
-            if (vanillaRecipe.isPresent()) {
-
-                // 3. Special guild recipes check
-                if (playerentity.getCommandTags().contains("Guild") &&
-                        vanillaRecipe.get().id().getValue().getNamespace().equals("polym") &&
-                        vanillaRecipe.get().id().getValue().getPath().startsWith("guild_")) {
-                    ItemStack result = vanillaRecipe.get().value().craft(recipeInput, this.world.getRegistryManager());
-                    this.resultInventory.setStack(0, result);
-                    return;
-                }
-
-                // 4. Regular polymorph vanilla recipes (non-guild)
-                if (vanillaRecipe.get().id().getValue().getNamespace().equals("polym") &&
-                        !vanillaRecipe.get().id().getValue().getPath().startsWith("guild_")) {
-                    ItemStack result = vanillaRecipe.get().value().craft(recipeInput, this.world.getRegistryManager());
-                    this.resultInventory.setStack(0, result);
-                    return;
-                }
-            }
             this.resultInventory.setStack(0, ItemStack.EMPTY);
         }
     }
