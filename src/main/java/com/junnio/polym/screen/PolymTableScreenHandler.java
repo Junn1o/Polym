@@ -15,6 +15,7 @@ import net.minecraft.recipe.RecipeType;
 import net.minecraft.recipe.input.CraftingRecipeInput;
 import net.minecraft.screen.ScreenHandler;
 import net.minecraft.screen.slot.Slot;
+import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.util.Identifier;
 import net.minecraft.world.World;
 
@@ -170,7 +171,6 @@ public class PolymTableScreenHandler extends ScreenHandler {
                 this.resultInventory.setStack(0, result);
                 return;
             }
-
             Optional<RecipeEntry<CraftingRecipe>> vanillaRecipe = this.world.getServer()
                     .getRecipeManager()
                     .getFirstMatch(RecipeType.CRAFTING, recipeInput, this.world);
