@@ -1,6 +1,7 @@
 package com.junnio.polym;
 
 import com.junnio.polym.block.ModBlocks;
+import com.junnio.polym.command.ModCommand;
 import com.junnio.polym.item.ModItemGroups;
 import com.junnio.polym.item.ModItems;
 import com.junnio.polym.recipe.ModRecipes;
@@ -23,5 +24,7 @@ public class Polym implements ModInitializer {
 		ModRecipes.initialize();
 		ModScreenHandlers.initialize();
 		ModSounds.initialize();
+		ModCommand.register();
+		LoggerFactory.getLogger(MOD_ID).info("Polym Initialized!");
 	}
 }

@@ -35,14 +35,12 @@ public class ModBlocks {
                     .strength(50.0F,1200.0F)
                     .requiresTool()
                     .luminance((state) ->4)
-                    .nonOpaque()
                     .solidBlock((state, world, pos) -> true)
                     .suffocates((state, world, pos) -> true)
                     .blockVision((state, world, pos) -> true)
             ,new Item.Settings().rarity(Rarity.RARE)
     );
     public static void initialize() {
-        Polym.LOGGER.info("Registering Custom Recipes for " + Polym.MOD_ID);
     }
 }
 
