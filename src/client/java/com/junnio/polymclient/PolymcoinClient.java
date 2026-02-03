@@ -13,6 +13,5 @@ public class PolymcoinClient implements ClientModInitializer {
 	public void onInitializeClient() {
 		HandledScreens.register(ModScreenHandlers.POLYM_TABLE_SCREEN_HANDLER, PolymTableScreen::new);
 		BlockRenderLayerMap.putBlock(ModBlocks.POLYM_TABLE, BlockRenderLayer.CUTOUT);
-
 	}
 }

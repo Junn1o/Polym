@@ -1,5 +1,5 @@
 {
-  "type": "minecraft:crafting_shaped",
+  "type": "polym:polym_recipe",
   "pattern": [
     "AAA",
     "###",

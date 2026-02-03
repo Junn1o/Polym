@@ -15,10 +15,8 @@ import net.minecraft.recipe.RecipeType;
 import net.minecraft.recipe.input.CraftingRecipeInput;
 import net.minecraft.screen.ScreenHandler;
 import net.minecraft.screen.slot.Slot;
-import net.minecraft.util.Identifier;
 import net.minecraft.world.World;
 
-import java.util.Objects;
 import java.util.Optional;
 
 public class PolymTableScreenHandler extends ScreenHandler {
@@ -166,6 +164,8 @@ public class PolymTableScreenHandler extends ScreenHandler {
                     .getFirstMatch(ModRecipes.POLYM_CRAFTING_TYPE, recipeInput, this.world);
 
             if (polymRecipe.isPresent()) {
+                if(!playerentity.getCommandTags().contains("Guild") && polymRecipe.get().id().getValue().getPath().startsWith("guild_"))
+                    return;
                 ItemStack result = polymRecipe.get().value().craft(recipeInput, this.world.getRegistryManager());
                 this.resultInventory.setStack(0, result);
                 return;
@@ -176,19 +176,7 @@ public class PolymTableScreenHandler extends ScreenHandler {
                     .getFirstMatch(RecipeType.CRAFTING, recipeInput, this.world);
 
             if (vanillaRecipe.isPresent()) {
-
-                // 3. Special guild recipes check
-                if (playerentity.getCommandTags().contains("Guild") &&
-                        vanillaRecipe.get().id().getValue().getNamespace().equals("polym") &&
-                        vanillaRecipe.get().id().getValue().getPath().startsWith("guild_")) {
-                    ItemStack result = vanillaRecipe.get().value().craft(recipeInput, this.world.getRegistryManager());
-                    this.resultInventory.setStack(0, result);
-                    return;
-                }
-
-                // 4. Regular polymorph vanilla recipes (non-guild)
-                if (vanillaRecipe.get().id().getValue().getNamespace().equals("polym") &&
-                        !vanillaRecipe.get().id().getValue().getPath().startsWith("guild_")) {
+                if (vanillaRecipe.get().id().getValue().getNamespace().equals("polym")) {
                     ItemStack result = vanillaRecipe.get().value().craft(recipeInput, this.world.getRegistryManager());
                     this.resultInventory.setStack(0, result);
                     return;

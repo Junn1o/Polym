@@ -10,7 +10,6 @@ import net.minecraft.recipe.*;
 import net.minecraft.recipe.book.RecipeBookCategory;
 import net.minecraft.recipe.input.CraftingRecipeInput;
 import net.minecraft.registry.RegistryWrapper;
-import net.minecraft.util.Identifier;
 import net.minecraft.world.World;
 
 import java.util.*;
@@ -102,29 +101,24 @@ public record PolymRecipe(String[] pattern, Map<String, Ingredient> key, ItemSta
         return IngredientPlacement.forMultipleSlots(ingredients);
     }
 
-
     @Override
     public RecipeBookCategory getRecipeBookCategory() {
         return null;
     }
 
+
     public static class Serializer implements RecipeSerializer<PolymRecipe> {
-        private static final Codec<Ingredient> INGREDIENT_CODEC = Codec.STRING.xmap(
-                str -> Ingredient.ofItems(net.minecraft.registry.Registries.ITEM.get(Identifier.of(str))),
-                ingredient -> ingredient.getMatchingItems().findFirst()
-                        .map(entry -> net.minecraft.registry.Registries.ITEM.getId(entry.value()).toString())
-                        .orElse("minecraft:air")
-        );
-
         public static final MapCodec<PolymRecipe> CODEC = RecordCodecBuilder.mapCodec(inst -> inst.group(
+                Codec.STRING.listOf().fieldOf("pattern").xmap(list -> list.toArray(new String[0]), Arrays::asList)
+                        .forGetter(r -> r.pattern),
 
-                Codec.STRING.listOf().fieldOf("pattern").xmap(
-                        list -> list.toArray(new String[0]),
-                        Arrays::asList
-                ).forGetter(recipe -> recipe.pattern),
-                Codec.unboundedMap(Codec.STRING, INGREDIENT_CODEC).fieldOf("key").forGetter(PolymRecipe::key),
+                Codec.unboundedMap(Codec.STRING, Ingredient.CODEC)
+                        .fieldOf("key")
+                        .forGetter(PolymRecipe::key),
+
                 ItemStack.CODEC.fieldOf("result").forGetter(PolymRecipe::result)
         ).apply(inst, PolymRecipe::new));
+
 
         @Override
         public MapCodec<PolymRecipe> codec() {
