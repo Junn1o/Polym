@@ -3,49 +3,48 @@ package com.junnio.polym.screen;
 import com.junnio.polym.recipe.ModRecipes;
 import com.junnio.polym.recipe.PolymRecipe;
 import com.junnio.polym.sound.ModSounds;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.entity.player.PlayerInventory;
-import net.minecraft.inventory.CraftingInventory;
-import net.minecraft.inventory.CraftingResultInventory;
-import net.minecraft.inventory.Inventory;
-import net.minecraft.item.ItemStack;
-import net.minecraft.recipe.CraftingRecipe;
-import net.minecraft.recipe.RecipeEntry;
-import net.minecraft.recipe.RecipeType;
-import net.minecraft.recipe.input.CraftingRecipeInput;
-import net.minecraft.screen.ScreenHandler;
-import net.minecraft.screen.slot.Slot;
-import net.minecraft.world.World;
-
 import java.util.Optional;
+import net.minecraft.world.Container;
+import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.inventory.ResultContainer;
+import net.minecraft.world.inventory.Slot;
+import net.minecraft.world.inventory.TransientCraftingContainer;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.crafting.CraftingInput;
+import net.minecraft.world.item.crafting.CraftingRecipe;
+import net.minecraft.world.item.crafting.RecipeHolder;
+import net.minecraft.world.item.crafting.RecipeType;
+import net.minecraft.world.level.Level;
 
-public class PolymTableScreenHandler extends ScreenHandler {
-    private final World world;
-    private final CraftingInventory craftingInventory;
-    private final Inventory resultInventory;
-    private final PlayerEntity playerentity;
-    public PolymTableScreenHandler(int syncId, PlayerInventory playerInventory, PlayerEntity playerentity) {
+public class PolymTableScreenHandler extends AbstractContainerMenu {
+    private final Level world;
+    private final TransientCraftingContainer craftingInventory;
+    private final Container resultInventory;
+    private final Player playerentity;
+    public PolymTableScreenHandler(int syncId, Inventory playerInventory, Player playerentity) {
         super(ModScreenHandlers.POLYM_TABLE_SCREEN_HANDLER, syncId);
 
-        this.world = playerInventory.player.getEntityWorld();
+        this.world = playerInventory.player.level();
         this.playerentity = playerentity;
 
-        this.resultInventory = new CraftingResultInventory();
+        this.resultInventory = new ResultContainer();
 
-        this.craftingInventory = new CraftingInventory(this, 3, 3);
+        this.craftingInventory = new TransientCraftingContainer(this, 3, 3);
 
         this.addSlot(new Slot(this.resultInventory, 0, 124, 35) {
             @Override
-            public void onTakeItem(PlayerEntity player, ItemStack stack) {
-                if (player.getEntityWorld().isClient()) {
+            public void onTake(Player player, ItemStack stack) {
+                if (player.level().isClientSide()) {
                     player.playSound(ModSounds.POLYM_ON_CRAFT, 1.0F, 1.0F);
                 }
                 consumeIngredients();
                 updateRecipeOutput();
-                super.onTakeItem(player, stack);
+                super.onTake(player, stack);
             }
             @Override
-            public boolean canInsert(ItemStack stack) {
+            public boolean mayPlace(ItemStack stack) {
                 return false;
             }
         });
@@ -68,121 +67,121 @@ public class PolymTableScreenHandler extends ScreenHandler {
 
     }
     private void consumeIngredients() {
-        for (int i = 0; i < craftingInventory.size(); i++) {
-            ItemStack slotStack = craftingInventory.getStack(i);
+        for (int i = 0; i < craftingInventory.getContainerSize(); i++) {
+            ItemStack slotStack = craftingInventory.getItem(i);
 
             if (!slotStack.isEmpty()) {
 
-                slotStack.decrement(1);
+                slotStack.shrink(1);
 
                 if (slotStack.getCount() == 0) {
-                    craftingInventory.setStack(i, ItemStack.EMPTY);
+                    craftingInventory.setItem(i, ItemStack.EMPTY);
                 }
             }
         }
 
-        craftingInventory.markDirty();
+        craftingInventory.setChanged();
     }
 
     @Override
-    public ItemStack quickMove(PlayerEntity player, int slotIndex) {
+    public ItemStack quickMoveStack(Player player, int slotIndex) {
         ItemStack itemStack = ItemStack.EMPTY;
         Slot slot = this.slots.get(slotIndex);
 
-        if (slot.hasStack()) {
-            ItemStack slotStack = slot.getStack();
+        if (slot.hasItem()) {
+            ItemStack slotStack = slot.getItem();
             itemStack = slotStack.copy();
 
             if (slotIndex == 0) {
-                if (!this.insertItem(slotStack, 10, 46, true)) {
+                if (!this.moveItemStackTo(slotStack, 10, 46, true)) {
                     return ItemStack.EMPTY;
                 }
-                slot.onQuickTransfer(slotStack, itemStack);
+                slot.onQuickCraft(slotStack, itemStack);
             }
             else if (slotIndex >= 10 && slotIndex < 46) {
-                if (!this.insertItem(slotStack, 1, 10, false)) {
+                if (!this.moveItemStackTo(slotStack, 1, 10, false)) {
                     if (slotIndex < 37) {
-                        if (!this.insertItem(slotStack, 37, 46, false)) {
+                        if (!this.moveItemStackTo(slotStack, 37, 46, false)) {
                             return ItemStack.EMPTY;
                         }
-                    } else if (!this.insertItem(slotStack, 10, 37, false)) {
+                    } else if (!this.moveItemStackTo(slotStack, 10, 37, false)) {
                         return ItemStack.EMPTY;
                     }
                 }
             }
 
-            else if (!this.insertItem(slotStack, 10, 46, false)) {
+            else if (!this.moveItemStackTo(slotStack, 10, 46, false)) {
                 return ItemStack.EMPTY;
             }
 
             if (slotStack.isEmpty()) {
-                slot.setStack(ItemStack.EMPTY);
+                slot.setByPlayer(ItemStack.EMPTY);
             } else {
-                slot.markDirty();
+                slot.setChanged();
             }
 
             if (slotStack.getCount() == itemStack.getCount()) {
                 return ItemStack.EMPTY;
             }
 
-            slot.onTakeItem(player, slotStack);
+            slot.onTake(player, slotStack);
         }
 
         return itemStack;
     }
 
     @Override
-    public void onClosed(PlayerEntity player) {
-        for (int i = 0; i < craftingInventory.size(); i++) {
-            ItemStack itemStack = craftingInventory.removeStack(i);
+    public void removed(Player player) {
+        for (int i = 0; i < craftingInventory.getContainerSize(); i++) {
+            ItemStack itemStack = craftingInventory.removeItemNoUpdate(i);
             if (!itemStack.isEmpty()) {
-                player.getInventory().insertStack(itemStack);
+                player.getInventory().add(itemStack);
                 if (!itemStack.isEmpty()) {
-                    player.dropItem(itemStack, false);
+                    player.drop(itemStack, false);
                 }
             }
         }
     }
 
     @Override
-    public void onContentChanged(Inventory inventory) {
+    public void slotsChanged(Container inventory) {
         if (inventory == craftingInventory) {
             updateRecipeOutput();
         }
     }
 
     @Override
-    public boolean canUse(PlayerEntity player) {
+    public boolean stillValid(Player player) {
         return true;
     }
 
     public void updateRecipeOutput() {
-        if (!this.world.isClient()) {
-            CraftingRecipeInput recipeInput = craftingInventory.createRecipeInput();
-            Optional<RecipeEntry<PolymRecipe>> polymRecipe = this.world.getServer()
+        if (!this.world.isClientSide()) {
+            CraftingInput recipeInput = craftingInventory.asCraftInput();
+            Optional<RecipeHolder<PolymRecipe>> polymRecipe = this.world.getServer()
                     .getRecipeManager()
-                    .getFirstMatch(ModRecipes.POLYM_CRAFTING_TYPE, recipeInput, this.world);
+                    .getRecipeFor(ModRecipes.POLYM_CRAFTING_TYPE, recipeInput, this.world);
 
             if (polymRecipe.isPresent()) {
-                if(!playerentity.getCommandTags().contains("Guild") && polymRecipe.get().id().getValue().getPath().startsWith("guild_"))
+                if(!playerentity.getTags().contains("Guild") && polymRecipe.get().id().identifier().getPath().startsWith("guild_"))
                     return;
-                ItemStack result = polymRecipe.get().value().craft(recipeInput, this.world.getRegistryManager());
-                this.resultInventory.setStack(0, result);
+                ItemStack result = polymRecipe.get().value().assemble(recipeInput, this.world.registryAccess());
+                this.resultInventory.setItem(0, result);
                 return;
             }
 
-            Optional<RecipeEntry<CraftingRecipe>> vanillaRecipe = this.world.getServer()
+            Optional<RecipeHolder<CraftingRecipe>> vanillaRecipe = this.world.getServer()
                     .getRecipeManager()
-                    .getFirstMatch(RecipeType.CRAFTING, recipeInput, this.world);
+                    .getRecipeFor(RecipeType.CRAFTING, recipeInput, this.world);
 
             if (vanillaRecipe.isPresent()) {
-                if (vanillaRecipe.get().id().getValue().getNamespace().equals("polym")) {
-                    ItemStack result = vanillaRecipe.get().value().craft(recipeInput, this.world.getRegistryManager());
-                    this.resultInventory.setStack(0, result);
+                if (vanillaRecipe.get().id().identifier().getNamespace().equals("polym")) {
+                    ItemStack result = vanillaRecipe.get().value().assemble(recipeInput, this.world.registryAccess());
+                    this.resultInventory.setItem(0, result);
                     return;
                 }
             }
-            this.resultInventory.setStack(0, ItemStack.EMPTY);
+            this.resultInventory.setItem(0, ItemStack.EMPTY);
         }
     }
 }

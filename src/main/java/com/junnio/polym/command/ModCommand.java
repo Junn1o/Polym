@@ -1,40 +1,40 @@
 package com.junnio.polym.command;
 
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
-import net.minecraft.command.argument.EntityArgumentType;
-import net.minecraft.server.command.CommandManager;
-import net.minecraft.server.command.ServerCommandSource;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.text.Text;
+import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.commands.Commands;
+import net.minecraft.commands.arguments.EntityArgument;
+import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerPlayer;
 
 public class ModCommand {
     private static final String GUILD_TAG = "Guild";
 
     public static void register() {
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, env) -> {
-            dispatcher.register(CommandManager.literal("guild").then(CommandManager.literal("pass").then(CommandManager.argument("target", EntityArgumentType.player()).executes(ctx -> {
-                ServerCommandSource source = ctx.getSource();
-                ServerPlayerEntity from = source.getPlayerOrThrow();
-                ServerPlayerEntity to = EntityArgumentType.getPlayer(ctx, "target");
+            dispatcher.register(Commands.literal("guild").then(Commands.literal("pass").then(Commands.argument("target", EntityArgument.player()).executes(ctx -> {
+                CommandSourceStack source = ctx.getSource();
+                ServerPlayer from = source.getPlayerOrException();
+                ServerPlayer to = EntityArgument.getPlayer(ctx, "target");
 
                 // must currently have the tag
-                if (!from.getCommandTags().contains(GUILD_TAG)) {
-                    source.sendError(Text.literal("Bạn là Guild Master hả?"));
+                if (!from.getTags().contains(GUILD_TAG)) {
+                    source.sendFailure(Component.literal("Bạn là Guild Master hả?"));
                     return 0;
                 }
 
                 // optional: prevent passing to self
                 if (from == to) {
-                    source.sendError(Text.literal("Chơi trò gì đây?"));
+                    source.sendFailure(Component.literal("Chơi trò gì đây?"));
                     return 0;
                 }
 
                 // transfer
-                from.removeCommandTag(GUILD_TAG);
-                to.addCommandTag(GUILD_TAG);
+                from.removeTag(GUILD_TAG);
+                to.addTag(GUILD_TAG);
 
-                source.sendFeedback(() -> Text.literal("Đã chuyển Guild Master " + to.getName().getString()), true);
-                to.sendMessage(Text.literal("Bạn đã được bầu là Guild Master " + from.getName().getString()));
+                source.sendSuccess(() -> Component.literal("Đã chuyển Guild Master " + to.getName().getString()), true);
+                to.sendSystemMessage(Component.literal("Bạn đã được bầu là Guild Master " + from.getName().getString()));
 
                 return 1;
             }))));
