@@ -13,8 +13,14 @@ public class ModScreenHandlers{
                     (syncId, inventory) -> new PolymTableScreenHandler(syncId, inventory, inventory.player),
                     FeatureFlagSet.of()
             );
+    public static final MenuType<ShopScreenHandler> SHOP_SCREEN_HANDLER =
+            new MenuType<>(
+                    (syncId, inventory) -> new ShopScreenHandler(syncId, inventory, inventory.player),
+                    FeatureFlagSet.of()
+            );
 
     public static void initialize() {
         Registry.register(BuiltInRegistries.MENU, Identifier.fromNamespaceAndPath(Polym.MOD_ID, "polym_table"), POLYM_TABLE_SCREEN_HANDLER);
+        Registry.register(BuiltInRegistries.MENU, Identifier.fromNamespaceAndPath(Polym.MOD_ID, "polym_shop"), SHOP_SCREEN_HANDLER);
     }
 }

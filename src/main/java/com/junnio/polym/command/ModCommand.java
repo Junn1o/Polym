@@ -10,7 +10,7 @@ import net.minecraft.server.level.ServerPlayer;
 public class ModCommand {
     private static final String GUILD_TAG = "Guild";
 
-    public static void register() {
+    public static void initialize() {
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, env) -> {
             dispatcher.register(Commands.literal("guild").then(Commands.literal("pass").then(Commands.argument("target", EntityArgument.player()).executes(ctx -> {
                 CommandSourceStack source = ctx.getSource();
