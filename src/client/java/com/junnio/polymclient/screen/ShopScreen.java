@@ -1,6 +1,5 @@
 package com.junnio.polymclient.screen;
 
-import com.junnio.polym.Polym;
 import com.junnio.polym.screen.ShopScreenHandler;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
@@ -10,11 +9,6 @@ import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.player.Inventory;
-import net.minecraft.world.inventory.MerchantMenu;
-import net.minecraft.world.item.trading.MerchantOffer;
-import net.minecraft.world.item.trading.MerchantOffers;
-
-import java.util.List;
 
 @Environment(EnvType.CLIENT)
 public class ShopScreen extends AbstractContainerScreen<ShopScreenHandler> {
@@ -31,6 +25,43 @@ public class ShopScreen extends AbstractContainerScreen<ShopScreenHandler> {
     @Override
     protected void init() {
         super.init();
+    }
+
+    @Override
+    public void render(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
+        this.renderBackground(g, mouseX, mouseY, partialTick);
+        super.render(g, mouseX, mouseY, partialTick);
+
+        int left = this.leftPos; // AbstractContainerScreen có sẵn
+        int top  = this.topPos;
+
+        var offers = this.menu.getOffers(); // bạn phải có getter trong handler
+        int visible = 7;
+
+        for (int row = 0; row < visible; row++) {
+            int idx = row; // sau này + scrollOffset
+            if (idx >= offers.size()) break;
+
+            var o = offers.get(idx);
+
+            int y = top + 16 + row * 20;     // bạn chỉnh lại theo layout villager
+            int xBuyA = left + 6 + 5;        // chỉnh tọa độ
+            int xBuyB = left + 6 + 5 + 18;
+            int xSell = left + 6 + 5 + 18 + 18 + 24;
+
+            g.renderItem(o.buyA(), xBuyA, y);
+            g.renderItemDecorations(this.font, o.buyA(), xBuyA, y);
+
+            if (!o.buyB().isEmpty()) {
+                g.renderItem(o.buyB(), xBuyB, y);
+                g.renderItemDecorations(this.font, o.buyB(), xBuyB, y);
+            }
+
+            g.renderItem(o.sell(), xSell, y);
+            g.renderItemDecorations(this.font, o.sell(), xSell, y);
+        }
+
+        this.renderTooltip(g, mouseX, mouseY);
     }
 
     @Override
