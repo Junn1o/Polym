@@ -1,5 +1,6 @@
 package com.junnio.polymclient.screen;
 
+import com.junnio.polym.net.OpenSellerPayLoad;
 import com.junnio.polym.net.OpenShopPayLoad;
 import com.junnio.polym.screen.PolymTableScreenHandler;
 import net.fabricmc.api.EnvType;
@@ -34,6 +35,7 @@ public class PolymTableScreen extends AbstractContainerScreen<PolymTableScreenHa
         );
         this.addRenderableWidget(
                 Button.builder(Component.literal("-"), btn -> {
+                    ClientPlayNetworking.send(new OpenSellerPayLoad());
                 }).bounds(right, top+20, 16, 16).build()
         );
     }

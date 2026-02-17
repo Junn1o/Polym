@@ -1,6 +1,7 @@
 package com.junnio.polym.net;
 
 import com.junnio.polym.Polym;
+import com.junnio.polym.screen.SellerScreenHandler;
 import com.junnio.polym.screen.ShopScreenHandler;
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
@@ -23,6 +24,7 @@ public class ModNetwork {
 
     public static void initialize() {
         PayloadTypeRegistry.playC2S().register(OpenShopPayLoad.TYPE, OpenShopPayLoad.CODEC);
+        PayloadTypeRegistry.playC2S().register(OpenSellerPayLoad.TYPE, OpenSellerPayLoad.CODEC);
         ServerPlayNetworking.registerGlobalReceiver(OpenShopPayLoad.TYPE, (payload, context) -> {
             context.server().execute(() -> {
                 var player = context.player();
@@ -39,6 +41,31 @@ public class ModNetwork {
                     @Override
                     public @Nullable AbstractContainerMenu createMenu(int i, Inventory inventory, Player player) {
                         return new ShopScreenHandler(i, inventory, player, openData);
+                    }
+
+                    @Override
+                    public Component getDisplayName() {
+                        return Component.literal("Shop");
+                    }
+                });
+            });
+        });
+        ServerPlayNetworking.registerGlobalReceiver(OpenSellerPayLoad.TYPE, (payload, context) -> {
+            context.server().execute(() -> {
+                var player = context.player();
+                List<ShopOfferData> offers = List.of(
+                        new ShopOfferData(new ItemStack(Items.EMERALD, 5), new ItemStack(Items.EMERALD, 5), new ItemStack(Items.DIAMOND, 1))
+                );
+                ShopOpenData openData = new ShopOpenData(offers);
+                player.openMenu(new ExtendedScreenHandlerFactory<ShopOpenData>() {
+                    @Override
+                    public ShopOpenData getScreenOpeningData(ServerPlayer player) {
+                        return openData;
+                    }
+
+                    @Override
+                    public @Nullable AbstractContainerMenu createMenu(int i, Inventory inventory, Player player) {
+                        return new SellerScreenHandler(i, inventory, player, openData);
                     }
 
                     @Override
