@@ -75,5 +75,18 @@ public class ModNetwork {
                 });
             });
         });
+        PayloadTypeRegistry.playC2S().register(AddOfferFromSlotsPayload.TYPE, AddOfferFromSlotsPayload.CODEC);
+        PayloadTypeRegistry.playS2C().register(SellerOffersSyncPayload.TYPE, SellerOffersSyncPayload.CODEC);
+// CHỈ GIỮ 1 receiver
+        ServerPlayNetworking.registerGlobalReceiver(AddOfferFromSlotsPayload.TYPE, (payload, context) -> {
+            context.server().execute(() -> {
+                ServerPlayer player = context.player();
+                if (!(player.containerMenu instanceof SellerScreenHandler sh)) return;
+
+                sh.addOfferFromSlotsAndClear();
+
+                ServerPlayNetworking.send(player, new SellerOffersSyncPayload(sh.getOffers()));
+            });
+        });
     }
 }

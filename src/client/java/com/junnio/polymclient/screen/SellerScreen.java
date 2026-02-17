@@ -1,10 +1,13 @@
 package com.junnio.polymclient.screen;
 
 import com.junnio.polym.Polym;
+import com.junnio.polym.net.AddOfferFromSlotsPayload;
+import com.junnio.polym.net.ShopOfferData;
 import com.junnio.polym.screen.SellerScreenHandler;
 import com.junnio.polym.screen.ShopScreenHandler;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
+import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
@@ -13,10 +16,13 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.player.Inventory;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Environment(EnvType.CLIENT)
 public class SellerScreen extends AbstractContainerScreen<SellerScreenHandler> {
     private static final Identifier BG = Identifier.withDefaultNamespace("textures/gui/container/villager.png");
-
+    private final List<ShopOfferData> offersView = new ArrayList<>();
     public SellerScreen(SellerScreenHandler handler, Inventory inv, Component title) {
         super(handler, inv, title);
         this.imageWidth = 276;
@@ -24,6 +30,17 @@ public class SellerScreen extends AbstractContainerScreen<SellerScreenHandler> {
     @Override
     protected void init() {
         super.init();
+        int x = this.leftPos + 190;
+        int y = this.topPos + 18;
+        this.addRenderableWidget(Button.builder(Component.literal("Add"), b -> {
+            ClientPlayNetworking.send(new AddOfferFromSlotsPayload());
+        }).pos(x, y).size(60, 20).build());
+        offersView.clear();
+        offersView.addAll(this.menu.getOffers());
+    }
+    public void setOffersFromServer(List<ShopOfferData> offers) {
+        offersView.clear();
+        offersView.addAll(offers);
     }
 
     @Override
@@ -34,7 +51,7 @@ public class SellerScreen extends AbstractContainerScreen<SellerScreenHandler> {
         int left = this.leftPos;
         int top  = this.topPos;
 
-        var offers = this.menu.getOffers();
+        var offers = this.offersView;
         int visible = 7;
 
         for (int row = 0; row < visible; row++) {
