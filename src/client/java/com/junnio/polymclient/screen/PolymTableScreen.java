@@ -1,6 +1,7 @@
 package com.junnio.polymclient.screen;
 
 import com.junnio.polym.net.OpenSellerPayLoad;
+import com.junnio.polym.net.OpenShopByOwnerPayload;
 import com.junnio.polym.net.OpenShopPayLoad;
 import com.junnio.polym.screen.PolymTableScreenHandler;
 import net.fabricmc.api.EnvType;
@@ -13,6 +14,8 @@ import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.player.Inventory;
+
+import java.util.UUID;
 
 @Environment(EnvType.CLIENT)
 public class PolymTableScreen extends AbstractContainerScreen<PolymTableScreenHandler> {
@@ -30,7 +33,7 @@ public class PolymTableScreen extends AbstractContainerScreen<PolymTableScreenHa
 
         this.addRenderableWidget(
                 Button.builder(Component.literal("+"), btn -> {
-                    ClientPlayNetworking.send(new OpenShopPayLoad());
+                    ClientPlayNetworking.send(new OpenShopByOwnerPayload(UUID.fromString("a205b8da-efc6-37ad-8e1d-84c0239cdd21")));
                 }).bounds(right, top, 16, 16).build()
         );
         this.addRenderableWidget(

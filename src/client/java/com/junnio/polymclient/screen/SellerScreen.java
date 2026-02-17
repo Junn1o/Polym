@@ -2,6 +2,7 @@ package com.junnio.polymclient.screen;
 
 import com.junnio.polym.Polym;
 import com.junnio.polym.net.AddOfferFromSlotsPayload;
+import com.junnio.polym.net.SaveSellerOffersPayload;
 import com.junnio.polym.net.ShopOfferData;
 import com.junnio.polym.screen.SellerScreenHandler;
 import com.junnio.polym.screen.ShopScreenHandler;
@@ -26,6 +27,7 @@ public class SellerScreen extends AbstractContainerScreen<SellerScreenHandler> {
     public SellerScreen(SellerScreenHandler handler, Inventory inv, Component title) {
         super(handler, inv, title);
         this.imageWidth = 276;
+        this.imageHeight = 166;
     }
     @Override
     protected void init() {
@@ -35,6 +37,9 @@ public class SellerScreen extends AbstractContainerScreen<SellerScreenHandler> {
         this.addRenderableWidget(Button.builder(Component.literal("Add"), b -> {
             ClientPlayNetworking.send(new AddOfferFromSlotsPayload());
         }).pos(x, y).size(60, 20).build());
+        this.addRenderableWidget(Button.builder(Component.literal("Save"), b -> {
+            ClientPlayNetworking.send(new SaveSellerOffersPayload(List.copyOf(this.offersView)));
+        }).pos(x, y + 24).size(60, 20).build());
         offersView.clear();
         offersView.addAll(this.menu.getOffers());
     }
@@ -84,6 +89,6 @@ public class SellerScreen extends AbstractContainerScreen<SellerScreenHandler> {
     protected void renderBg(GuiGraphics g, float f, int i, int j) {
         int k = (this.width - this.imageWidth) / 2;
         int l = (this.height - this.imageHeight) / 2;
-        g.blit(RenderPipelines.GUI_TEXTURED, BG, k, l, 0.0F, 0.0F, this.imageWidth, this.imageHeight, 512, 256);
+        g.blit(RenderPipelines.GUI_TEXTURED, BG, k, l, 0, 0, this.imageWidth, this.imageHeight, 512, 256);
     }
 }

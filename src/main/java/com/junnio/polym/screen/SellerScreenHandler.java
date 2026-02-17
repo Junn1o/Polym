@@ -32,10 +32,10 @@ public class SellerScreenHandler extends AbstractContainerMenu {
         this.world = playerInventory.player.level();
         this.playerentity = player;
         this.offers = new ArrayList<>(data.offers());
-        this.addStandardInventorySlots(playerInventory, 108, 84);
         this.addSlot(new Slot(offerInv, SLOT_BUY_A,  /*x*/ 136, /*y*/ 37));
         this.addSlot(new Slot(offerInv, SLOT_BUY_B,  /*x*/ 154, /*y*/ 37));
         this.addSlot(new Slot(offerInv, SLOT_SELL,   /*x*/ 208, /*y*/ 37));
+        this.addStandardInventorySlots(playerInventory, 108, 84);
     }
     public void addOfferFromSlotsAndClear() {
         ItemStack a = offerInv.getItem(0).copy();

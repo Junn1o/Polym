@@ -18,6 +18,7 @@ import net.minecraft.world.item.Items;
 import org.jspecify.annotations.Nullable;
 
 import java.util.List;
+import java.util.UUID;
 
 public class ModNetwork {
     public static final Identifier OPEN_SHOP = Identifier.fromNamespaceAndPath(Polym.MOD_ID, "open_shop");
@@ -86,6 +87,48 @@ public class ModNetwork {
                 sh.addOfferFromSlotsAndClear();
 
                 ServerPlayNetworking.send(player, new SellerOffersSyncPayload(sh.getOffers()));
+            });
+        });
+        PayloadTypeRegistry.playC2S().register(SaveSellerOffersPayload.TYPE, SaveSellerOffersPayload.CODEC);
+
+        ServerPlayNetworking.registerGlobalReceiver(SaveSellerOffersPayload.TYPE, (payload, context) -> {
+            context.server().execute(() -> {
+                ServerPlayer player = context.player();
+
+                // validate
+                List<ShopOfferData> safe = payload.offers().stream()
+                        .limit(300)
+                        .map(o -> new ShopOfferData(
+                                o.buyA() == null ? ItemStack.EMPTY : o.buyA(),
+                                o.buyB() == null ? ItemStack.EMPTY : o.buyB(),
+                                o.sell() == null ? ItemStack.EMPTY : o.sell()
+                        ))
+                        .toList();
+
+                SellerShopJsonStore store = SellerShopJsonStore.get(context.server());
+                store.setShop(player.getUUID(), player.getGameProfile().name(), safe);
+                store.saveNow(); // ghi file
+            });
+        });
+
+        PayloadTypeRegistry.playC2S().register(OpenShopByOwnerPayload.TYPE, OpenShopByOwnerPayload.CODEC);
+
+        ServerPlayNetworking.registerGlobalReceiver(OpenShopByOwnerPayload.TYPE, (payload, context) -> {
+            context.server().execute(() -> {
+                ServerPlayer player = context.player();
+                UUID owner = payload.owner();
+
+                SellerShopJsonStore store = SellerShopJsonStore.get(context.server());
+                List<ShopOfferData> offers = store.getOffers(owner);
+
+                ShopOpenData openData = new ShopOpenData(offers);
+                player.openMenu(new ExtendedScreenHandlerFactory<ShopOpenData>() {
+                    @Override public ShopOpenData getScreenOpeningData(ServerPlayer p) { return openData; }
+                    @Override public AbstractContainerMenu createMenu(int syncId, Inventory inv, Player p) {
+                        return new ShopScreenHandler(syncId, inv, p, openData);
+                    }
+                    @Override public Component getDisplayName() { return Component.literal("Shop"); }
+                });
             });
         });
     }
