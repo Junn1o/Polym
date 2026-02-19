@@ -105,5 +105,28 @@ public class ModNetwork {
                 });
             });
         });
+
+        PayloadTypeRegistry.playC2S().register(DeleteOfferPayload.TYPE, DeleteOfferPayload.CODEC);
+
+        ServerPlayNetworking.registerGlobalReceiver(DeleteOfferPayload.TYPE, (payload, context) -> {
+            context.server().execute(() -> {
+                ServerPlayer player = context.player();
+                if (!(player.containerMenu instanceof SellerScreenHandler sh)) return;
+
+                sh.deleteOffer(payload.index());
+                ServerPlayNetworking.send(player, new SellerOffersSyncPayload(sh.getOffers()));
+            });
+        });
+        PayloadTypeRegistry.playC2S().register(EditOfferPayload.TYPE, EditOfferPayload.CODEC);
+
+        ServerPlayNetworking.registerGlobalReceiver(EditOfferPayload.TYPE, (payload, context) -> {
+            context.server().execute(() -> {
+                ServerPlayer player = context.player();
+                if (!(player.containerMenu instanceof SellerScreenHandler sh)) return;
+
+                sh.editOfferFromSlotsAndClear(payload.index());
+                ServerPlayNetworking.send(player, new SellerOffersSyncPayload(sh.getOffers()));
+            });
+        });
     }
 }

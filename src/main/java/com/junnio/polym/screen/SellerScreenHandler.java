@@ -33,9 +33,35 @@ public class SellerScreenHandler extends AbstractContainerMenu {
         this.playerentity = player;
         this.offers = new ArrayList<>(data.offers());
         this.addSlot(new Slot(offerInv, SLOT_BUY_A,  /*x*/ 136, /*y*/ 37));
-        this.addSlot(new Slot(offerInv, SLOT_BUY_B,  /*x*/ 154, /*y*/ 37));
-        this.addSlot(new Slot(offerInv, SLOT_SELL,   /*x*/ 208, /*y*/ 37));
+        this.addSlot(new Slot(offerInv, SLOT_BUY_B,  /*x*/ 162, /*y*/ 37));
+        this.addSlot(new Slot(offerInv, SLOT_SELL,   /*x*/ 220, /*y*/ 37));
         this.addStandardInventorySlots(playerInventory, 108, 84);
+    }
+    public void editOfferFromSlotsAndClear(int index) {
+        if (index < 0 || index >= offers.size()) return;
+
+        ItemStack a = offerInv.getItem(0).copy();
+        ItemStack b = offerInv.getItem(1).copy();
+        ItemStack s = offerInv.getItem(2).copy();
+        if (a.isEmpty() || s.isEmpty()) return;
+
+        a.setCount(1);
+        if (!b.isEmpty()) b.setCount(1);
+        s.setCount(1);
+
+        offers.set(index, new ShopOfferData(a, b.isEmpty()?ItemStack.EMPTY:b, s));
+
+        offerInv.setItem(0, ItemStack.EMPTY);
+        offerInv.setItem(1, ItemStack.EMPTY);
+        offerInv.setItem(2, ItemStack.EMPTY);
+
+        broadcastChanges();
+    }
+
+    public void deleteOffer(int index) {
+        if (index < 0 || index >= offers.size()) return;
+        offers.remove(index);
+        broadcastChanges();
     }
     public void addOfferFromSlotsAndClear() {
         ItemStack a = offerInv.getItem(0).copy();

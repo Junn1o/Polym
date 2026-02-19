@@ -40,6 +40,7 @@ public class PolymTableScreen extends AbstractContainerScreen<PolymTableScreenHa
         );
         this.addRenderableWidget(
                 Button.builder(Component.literal("-"), btn -> {
+                    //ClientPlayNetworking.send(new OpenShopByOwnerPayload(UUID.fromString("705e0a2e-2893-42c8-b31e-f4f6ea6486a1")));
                     ClientPlayNetworking.send(new OpenShopByOwnerPayload(uuid));
                 }).bounds(right, top+20, 16, 16).build()
         );

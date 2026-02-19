@@ -13,8 +13,6 @@ import net.minecraft.world.entity.player.Inventory;
 @Environment(EnvType.CLIENT)
 public class ShopScreen extends AbstractContainerScreen<ShopScreenHandler> {
     private static final Identifier BG = Identifier.withDefaultNamespace("textures/gui/container/villager.png");
-    private static final Identifier TRADE_ARROW_SPRITE = Identifier.withDefaultNamespace("container/villager/trade_arrow");
-    private static final Identifier SCROLLER_DISABLED_SPRITE = Identifier.withDefaultNamespace("container/villager/scroller_disabled");
 
     public ShopScreen(ShopScreenHandler handler, Inventory inv, Component title) {
         super(handler, inv, title);

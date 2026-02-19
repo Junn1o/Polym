@@ -1,9 +1,7 @@
 package com.junnio.polymclient.screen;
 
 import com.junnio.polym.Polym;
-import com.junnio.polym.net.AddOfferFromSlotsPayload;
-import com.junnio.polym.net.SaveSellerOffersPayload;
-import com.junnio.polym.net.ShopOfferData;
+import com.junnio.polym.net.*;
 import com.junnio.polym.screen.SellerScreenHandler;
 import com.junnio.polym.screen.ShopScreenHandler;
 import net.fabricmc.api.EnvType;
@@ -18,6 +16,8 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.item.ItemStack;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -33,6 +33,10 @@ public class SellerScreen extends AbstractContainerScreen<SellerScreenHandler> {
     private boolean isAdd = false;
     private boolean isRemove = false;
     private boolean isEdit = false;
+    private boolean isDone = true;
+    @Nullable
+    private ShopOfferData previewOffer = null;
+    private Button addBtn, saveBtn, deleteBtn, editBtn;
     public SellerScreen(SellerScreenHandler handler, Inventory inv, Component title) {
         super(handler, inv, title);
         this.imageWidth = 276;
@@ -50,29 +54,59 @@ public class SellerScreen extends AbstractContainerScreen<SellerScreenHandler> {
             int row = i;
             offerButtons[i] = this.addRenderableWidget(new OfferButton(
                     left + 5, y, row, btn -> {
-                        this.selected = row + this.scrollOff;
-                    }
+                int idx = row + this.scrollOff;
+                this.selected = idx;
+
+                if (idx >= 0 && idx < this.offersView.size()) {
+                    this.previewOffer = this.offersView.get(idx);
+                } else {
+                    this.previewOffer = null;
+                }
+
+                updateActionButtons();
+            }
             ));
             y += 20;
         }
-        int xBtn = left + 190;
-        int yBtn = top + 18;
-        this.addRenderableWidget(Button.builder(Component.literal("Add"), b ->
-                ClientPlayNetworking.send(new AddOfferFromSlotsPayload())
-        ).pos(xBtn, yBtn).size(60, 20).build());
+        int btnW = 25;
+        int btnH = 25;
 
-        this.addRenderableWidget(Button.builder(Component.literal("Save"), b ->
+        int xOutside = this.leftPos + this.imageWidth;
+        int yBase = this.topPos;
+
+        this.addBtn = this.addRenderableWidget(Button.builder(Component.literal("Add"), b ->
+                ClientPlayNetworking.send(new AddOfferFromSlotsPayload())
+        ).pos(xOutside, yBase).size(btnW, btnH).build());
+
+        this.saveBtn = this.addRenderableWidget(Button.builder(Component.literal("Save"), b ->
                 ClientPlayNetworking.send(new SaveSellerOffersPayload(List.copyOf(this.offersView)))
-        ).pos(xBtn, yBtn + 24).size(60, 20).build());
+        ).pos(xOutside, yBase + 24).size(btnW, btnH).build());
+
+        this.deleteBtn = this.addRenderableWidget(Button.builder(Component.literal("Delete"), b -> {
+            if (this.selected >= 0) ClientPlayNetworking.send(new DeleteOfferPayload(this.selected));
+        }).pos(xOutside, yBase + 48).size(btnW, btnH).build());
+
+        this.editBtn = this.addRenderableWidget(Button.builder(Component.literal("Edit"), b -> {
+            if (this.selected >= 0) ClientPlayNetworking.send(new EditOfferPayload(this.selected));
+        }).pos(xOutside, yBase + 72).size(btnW, btnH).build());
 
         offersView.clear();
         offersView.addAll(this.menu.getOffers());
         updateOfferButtons();
+        updateActionButtons();
+    }
+    private void updateActionButtons() {
+        boolean hasSelection = this.selected >= 0 && this.selected < this.offersView.size();
+        this.saveBtn.active = !this.offersView.isEmpty();
+        this.deleteBtn.active = hasSelection;
+        this.editBtn.active = hasSelection;
+        this.addBtn.active = true;
     }
     public void setOffersFromServer(List<ShopOfferData> offers) {
         offersView.clear();
         offersView.addAll(offers);
         updateOfferButtons();
+        updateActionButtons();
     }
     private void updateOfferButtons() {
         for (int i = 0; i < 7; i++) {
@@ -124,8 +158,37 @@ public class SellerScreen extends AbstractContainerScreen<SellerScreenHandler> {
         int sx = this.leftPos + 94;
         int sy = this.topPos + 18 + scrollerY();
         g.blit(RenderPipelines.GUI_TEXTURED, BG, sx, sy, /*u*/ 0, /*v*/ 199, 6, 27, 512, 256);
+        if (this.previewOffer != null) {
+            ItemStack realA = this.menu.getSlot(SellerScreenHandler.SLOT_BUY_A).getItem();
+            ItemStack realB = this.menu.getSlot(SellerScreenHandler.SLOT_BUY_B).getItem();
+            ItemStack realS = this.menu.getSlot(SellerScreenHandler.SLOT_SELL).getItem();
+
+            boolean emptyA = realA.isEmpty();
+            boolean emptyB = realB.isEmpty();
+            boolean emptyS = realS.isEmpty();
+            int px = this.leftPos + 136;
+            int py = this.topPos + 37;
+
+            ItemStack a = previewOffer.buyA();
+            ItemStack b = previewOffer.buyB();
+            ItemStack s = previewOffer.sell();
+
+            if (emptyA) {
+                g.renderFakeItem(a, px, py);
+                g.renderItemDecorations(this.font, a, px, py);
+            }
+            if (emptyB && !b.isEmpty()) {
+                g.renderFakeItem(b, px + 26, py);
+                g.renderItemDecorations(this.font, b, px + 26, py);
+            }
+            if (emptyS) {
+                g.renderFakeItem(s, px + 26 + 58, py);
+                g.renderItemDecorations(this.font, s, px + 26 + 58, py);
+            }
+        }
         this.renderTooltip(g, mouseX, mouseY);
     }
+
     private boolean canScroll() {
         return this.offersView.size() > 7;
     }
