@@ -16,6 +16,7 @@ import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
+import net.minecraft.util.Mth;
 import net.minecraft.world.entity.player.Inventory;
 
 import java.util.ArrayList;
@@ -24,11 +25,14 @@ import java.util.List;
 @Environment(EnvType.CLIENT)
 public class SellerScreen extends AbstractContainerScreen<SellerScreenHandler> {
     private static final Identifier BG = Identifier.withDefaultNamespace("textures/gui/container/villager.png");
-    private static final Identifier SCROLLER_SPRITE = Identifier.withDefaultNamespace("container/villager/scroller");
+    private static final Identifier SCROLLER_SPRITE = Identifier.withDefaultNamespace("textures/gui/sprites/container/villager/scroller.png");
     private final List<ShopOfferData> offersView = new ArrayList<>();
     private int selected = 0;
     private int scrollOff = 0;
     private final OfferButton[] offerButtons = new OfferButton[7];
+    private boolean isAdd = false;
+    private boolean isRemove = false;
+    private boolean isEdit = false;
     public SellerScreen(SellerScreenHandler handler, Inventory inv, Component title) {
         super(handler, inv, title);
         this.imageWidth = 276;
@@ -117,8 +121,37 @@ public class SellerScreen extends AbstractContainerScreen<SellerScreenHandler> {
             g.renderFakeItem(o.sell(), xSell, y);
             g.renderItemDecorations(this.font, o.sell(), xSell, y);
         }
-
+        int sx = this.leftPos + 94;
+        int sy = this.topPos + 18 + scrollerY();
+        g.blit(RenderPipelines.GUI_TEXTURED, BG, sx, sy, /*u*/ 0, /*v*/ 199, 6, 27, 512, 256);
         this.renderTooltip(g, mouseX, mouseY);
+    }
+    private boolean canScroll() {
+        return this.offersView.size() > 7;
+    }
+
+    private int maxScroll() {
+        return Math.max(0, this.offersView.size() - 7);
+    }
+    @Override
+    public boolean mouseScrolled(double d, double e, double f, double g) {
+        if (super.mouseScrolled(d, e, f, g)) return true;
+        if (!canScroll()) return false;
+        this.scrollOff = Mth.clamp((int)(this.scrollOff - g), 0, maxScroll());
+        updateOfferButtons();
+        return true;
+    }
+    private int scrollerY() {
+        int total = offersView.size();
+        int max = total - 7;
+        if (max <= 0) return 0;
+
+        int track = 139;
+        int knobH = 27;
+
+        int n = track - knobH;
+        float t = (float)scrollOff / (float)max;
+        return (int)(t * n);
     }
 
     @Override
