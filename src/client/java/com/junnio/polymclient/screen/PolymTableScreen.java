@@ -7,6 +7,7 @@ import com.junnio.polym.screen.PolymTableScreenHandler;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
@@ -30,15 +31,16 @@ public class PolymTableScreen extends AbstractContainerScreen<PolymTableScreenHa
         super.init();
         int top = this.topPos + 4;
         int right  = this.leftPos + this.imageWidth;
-
+        assert Minecraft.getInstance().player != null;
+        UUID uuid = Minecraft.getInstance().player.getUUID();
         this.addRenderableWidget(
                 Button.builder(Component.literal("+"), btn -> {
-                    ClientPlayNetworking.send(new OpenShopByOwnerPayload(UUID.fromString("a205b8da-efc6-37ad-8e1d-84c0239cdd21")));
+                    ClientPlayNetworking.send(new OpenShopPayLoad());
                 }).bounds(right, top, 16, 16).build()
         );
         this.addRenderableWidget(
                 Button.builder(Component.literal("-"), btn -> {
-                    ClientPlayNetworking.send(new OpenSellerPayLoad());
+                    ClientPlayNetworking.send(new OpenShopByOwnerPayload(uuid));
                 }).bounds(right, top+20, 16, 16).build()
         );
     }
