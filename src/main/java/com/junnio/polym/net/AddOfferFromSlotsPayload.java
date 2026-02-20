@@ -14,4 +14,3 @@ public record AddOfferFromSlotsPayload() implements CustomPacketPayload {
 
     @Override public Type<? extends CustomPacketPayload> type() { return TYPE; }
 }
-

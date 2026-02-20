@@ -68,9 +68,9 @@ public class ModNetwork {
         ServerPlayNetworking.registerGlobalReceiver(SaveSellerOffersPayload.TYPE, (payload, context) -> {
             context.server().execute(() -> {
                 ServerPlayer player = context.player();
+                if (!(player.containerMenu instanceof SellerScreenHandler sh)) return;
 
-                // validate
-                List<ShopOfferData> safe = payload.offers().stream()
+                List<ShopOfferData> safe = sh.getOffers().stream()
                         .limit(300)
                         .map(o -> new ShopOfferData(
                                 o.buyA() == null ? ItemStack.EMPTY : o.buyA(),
@@ -81,7 +81,7 @@ public class ModNetwork {
 
                 SellerShopJsonStore store = SellerShopJsonStore.get(context.server());
                 store.setShop(player.getUUID(), player.getGameProfile().name(), safe);
-                store.saveNow(); // ghi file
+                store.saveNow();
             });
         });
 

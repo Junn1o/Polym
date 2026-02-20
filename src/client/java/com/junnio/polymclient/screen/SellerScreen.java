@@ -36,7 +36,11 @@ public class SellerScreen extends AbstractContainerScreen<SellerScreenHandler> {
     private boolean isDone = true;
     @Nullable
     private ShopOfferData previewOffer = null;
-    private Button addBtn, saveBtn, deleteBtn, editBtn;
+    private enum ActionMode { NORMAL, ADDING, EDITING }
+    private ActionMode mode = ActionMode.NORMAL;
+
+    private Button addBtn, saveBtn, deleteBtn, editBtn, cancelBtn;
+
     public SellerScreen(SellerScreenHandler handler, Inventory inv, Component title) {
         super(handler, inv, title);
         this.imageWidth = 276;
@@ -74,34 +78,69 @@ public class SellerScreen extends AbstractContainerScreen<SellerScreenHandler> {
         int xOutside = this.leftPos + this.imageWidth;
         int yBase = this.topPos;
 
-        this.addBtn = this.addRenderableWidget(Button.builder(Component.literal("Add"), b ->
-                ClientPlayNetworking.send(new AddOfferFromSlotsPayload())
-        ).pos(xOutside, yBase).size(btnW, btnH).build());
-
-        this.saveBtn = this.addRenderableWidget(Button.builder(Component.literal("Save"), b ->
-                ClientPlayNetworking.send(new SaveSellerOffersPayload(List.copyOf(this.offersView)))
-        ).pos(xOutside, yBase + 24).size(btnW, btnH).build());
-
-        this.deleteBtn = this.addRenderableWidget(Button.builder(Component.literal("Delete"), b -> {
-            if (this.selected >= 0) ClientPlayNetworking.send(new DeleteOfferPayload(this.selected));
-        }).pos(xOutside, yBase + 48).size(btnW, btnH).build());
+        this.addBtn = this.addRenderableWidget(Button.builder(Component.literal("Add"), b -> {
+            this.mode = ActionMode.ADDING;
+            updateActionButtons();
+        }).pos(xOutside, yBase).size(btnW, btnH).build());
 
         this.editBtn = this.addRenderableWidget(Button.builder(Component.literal("Edit"), b -> {
-            if (this.selected >= 0) ClientPlayNetworking.send(new EditOfferPayload(this.selected));
+            if (!hasSelection()) return;
+            this.mode = ActionMode.EDITING;
+            updateActionButtons();
         }).pos(xOutside, yBase + 72).size(btnW, btnH).build());
 
+        this.saveBtn = this.addRenderableWidget(Button.builder(Component.literal("Save"), b -> {
+            if (!validateRequiredSlots()) return;
+
+            if (this.mode == ActionMode.ADDING) {
+                ClientPlayNetworking.send(new AddOfferFromSlotsPayload());
+            } else if (this.mode == ActionMode.EDITING) {
+                if (!hasSelection()) return;
+                ClientPlayNetworking.send(new EditOfferPayload(this.selected));
+            }
+
+            ClientPlayNetworking.send(new SaveSellerOffersPayload());
+
+            this.mode = ActionMode.NORMAL;
+            updateActionButtons();
+        }).pos(xOutside, yBase + 24).size(btnW, btnH).build());
+
+        this.deleteBtn = this.addRenderableWidget(Button.builder(Component.literal("Delete"), b -> {
+            if (hasSelection()) ClientPlayNetworking.send(new DeleteOfferPayload(this.selected));
+        }).pos(xOutside, yBase + 48).size(btnW, btnH).build());
+        this.cancelBtn = this.addRenderableWidget(Button.builder(Component.literal("Cancel"), b -> {
+            this.mode = ActionMode.NORMAL;
+            this.previewOffer = null;
+            updateActionButtons();
+        }).pos(xOutside, yBase + 96).size(btnW, btnH).build());
         offersView.clear();
         offersView.addAll(this.menu.getOffers());
         updateOfferButtons();
         updateActionButtons();
     }
-    private void updateActionButtons() {
-        boolean hasSelection = this.selected >= 0 && this.selected < this.offersView.size();
-        this.saveBtn.active = !this.offersView.isEmpty();
-        this.deleteBtn.active = hasSelection;
-        this.editBtn.active = hasSelection;
-        this.addBtn.active = true;
+    private boolean validateRequiredSlots() {
+        ItemStack a = this.menu.getSlot(SellerScreenHandler.SLOT_BUY_A).getItem();
+        ItemStack s = this.menu.getSlot(SellerScreenHandler.SLOT_SELL).getItem();
+        return !a.isEmpty() && !s.isEmpty();
     }
+
+    private boolean hasSelection() {
+        return this.selected >= 0 && this.selected < this.offersView.size();
+    }
+    private void updateActionButtons() {
+        boolean selection = hasSelection();
+        boolean validSlots = validateRequiredSlots();
+        this.addBtn.setMessage(Component.literal(this.mode == ActionMode.ADDING ? "Adding" : "Add"));
+        this.editBtn.setMessage(Component.literal(this.mode == ActionMode.EDITING ? "Editting" : "Edit"));
+        boolean locked = (this.mode != ActionMode.NORMAL);
+        this.saveBtn.active = validSlots && (!this.offersView.isEmpty() || locked);
+        this.cancelBtn.active = locked;
+        this.addBtn.active    = !locked;
+        this.deleteBtn.active = !locked && selection;
+        this.editBtn.active   = !locked && selection;
+        this.cancelBtn.visible = locked;
+    }
+
     public void setOffersFromServer(List<ShopOfferData> offers) {
         offersView.clear();
         offersView.addAll(offers);
