@@ -1,9 +1,7 @@
 package com.junnio.polymclient.screen;
 
-import com.junnio.polym.Polym;
 import com.junnio.polym.net.*;
 import com.junnio.polym.screen.SellerScreenHandler;
-import com.junnio.polym.screen.ShopScreenHandler;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
@@ -27,20 +25,16 @@ public class SellerScreen extends AbstractContainerScreen<SellerScreenHandler> {
     private static final Identifier BG = Identifier.withDefaultNamespace("textures/gui/container/villager.png");
     private static final Identifier SCROLLER_SPRITE = Identifier.withDefaultNamespace("textures/gui/sprites/container/villager/scroller.png");
     private final List<ShopOfferData> offersView = new ArrayList<>();
-    private int selected = 0;
+    private int selected = -1;
     private int scrollOff = 0;
     private final OfferButton[] offerButtons = new OfferButton[7];
-    private boolean isAdd = false;
-    private boolean isRemove = false;
-    private boolean isEdit = false;
-    private boolean isDone = true;
     @Nullable
     private ShopOfferData previewOffer = null;
     private enum ActionMode { NORMAL, ADDING, EDITING }
     private ActionMode mode = ActionMode.NORMAL;
-
     private Button addBtn, saveBtn, deleteBtn, editBtn, cancelBtn;
-
+    private static final int LIST_Y0 = 18;
+    private static final int ROW_H = 20;
     public SellerScreen(SellerScreenHandler handler, Inventory inv, Component title) {
         super(handler, inv, title);
         this.imageWidth = 276;
@@ -53,7 +47,7 @@ public class SellerScreen extends AbstractContainerScreen<SellerScreenHandler> {
         int left = this.leftPos;
         int top  = this.topPos;
 
-        int y = top + 16 + 2;
+        int y = top + LIST_Y0;
         for (int i = 0; i < 7; i++) {
             int row = i;
             offerButtons[i] = this.addRenderableWidget(new OfferButton(
@@ -70,9 +64,9 @@ public class SellerScreen extends AbstractContainerScreen<SellerScreenHandler> {
                 updateActionButtons();
             }
             ));
-            y += 20;
+            y += ROW_H;
         }
-        int btnW = 25;
+        int btnW = 60;
         int btnH = 25;
 
         int xOutside = this.leftPos + this.imageWidth;
@@ -87,7 +81,7 @@ public class SellerScreen extends AbstractContainerScreen<SellerScreenHandler> {
             if (!hasSelection()) return;
             this.mode = ActionMode.EDITING;
             updateActionButtons();
-        }).pos(xOutside, yBase + 72).size(btnW, btnH).build());
+        }).pos(xOutside, yBase + 24).size(btnW, btnH).build());
 
         this.saveBtn = this.addRenderableWidget(Button.builder(Component.literal("Save"), b -> {
             if (!validateRequiredSlots()) return;
@@ -103,10 +97,13 @@ public class SellerScreen extends AbstractContainerScreen<SellerScreenHandler> {
 
             this.mode = ActionMode.NORMAL;
             updateActionButtons();
-        }).pos(xOutside, yBase + 24).size(btnW, btnH).build());
+        }).pos(xOutside, yBase + 72).size(btnW, btnH).build());
 
         this.deleteBtn = this.addRenderableWidget(Button.builder(Component.literal("Delete"), b -> {
-            if (hasSelection()) ClientPlayNetworking.send(new DeleteOfferPayload(this.selected));
+            if (hasSelection()) {
+                ClientPlayNetworking.send(new DeleteOfferPayload(this.selected));
+                ClientPlayNetworking.send(new SaveSellerOffersPayload());
+            }
         }).pos(xOutside, yBase + 48).size(btnW, btnH).build());
         this.cancelBtn = this.addRenderableWidget(Button.builder(Component.literal("Cancel"), b -> {
             this.mode = ActionMode.NORMAL;
@@ -129,17 +126,22 @@ public class SellerScreen extends AbstractContainerScreen<SellerScreenHandler> {
     }
     private void updateActionButtons() {
         boolean selection = hasSelection();
-        boolean validSlots = validateRequiredSlots();
+        boolean locked = (this.mode != ActionMode.NORMAL);
+
         this.addBtn.setMessage(Component.literal(this.mode == ActionMode.ADDING ? "Adding" : "Add"));
         this.editBtn.setMessage(Component.literal(this.mode == ActionMode.EDITING ? "Editting" : "Edit"));
-        boolean locked = (this.mode != ActionMode.NORMAL);
-        this.saveBtn.active = validSlots && (!this.offersView.isEmpty() || locked);
-        this.cancelBtn.active = locked;
-        this.addBtn.active    = !locked;
-        this.deleteBtn.active = !locked && selection;
-        this.editBtn.active   = !locked && selection;
         this.cancelBtn.visible = locked;
+        this.cancelBtn.active = locked;
+        this.saveBtn.visible = true;
+        if (locked)
+            this.saveBtn.active = true;
+        else
+            this.saveBtn.active = false;
+        this.addBtn.active    = !locked;
+        this.editBtn.active   = !locked && selection;
+        this.deleteBtn.active = !locked && selection;
     }
+
 
     public void setOffersFromServer(List<ShopOfferData> offers) {
         offersView.clear();
@@ -148,12 +150,13 @@ public class SellerScreen extends AbstractContainerScreen<SellerScreenHandler> {
         updateActionButtons();
     }
     private void updateOfferButtons() {
+        boolean locked = (this.mode != ActionMode.NORMAL);
         for (int i = 0; i < 7; i++) {
             if (offerButtons[i] == null) continue;
             int idx = i + this.scrollOff;
             boolean has = idx >= 0 && idx < this.offersView.size();
             offerButtons[i].visible = has;
-            offerButtons[i].active = has;
+            offerButtons[i].active = has && !locked;
         }
         if (this.offersView.isEmpty()) this.selected = -1;
         else this.selected = Math.max(0, Math.min(this.selected, this.offersView.size() - 1));
@@ -172,13 +175,13 @@ public class SellerScreen extends AbstractContainerScreen<SellerScreenHandler> {
         for (int row = 0; row < visible; row++) {
             int idx = row + this.scrollOff;
             if (idx >= offers.size()) break;
-            int yRow = top + 16 + row * 20;
+            int yRow = top + LIST_Y0 + row * ROW_H;
             if (idx == this.selected) {
                 g.fill(left + 5, yRow - 1, left + 5 + 88, yRow - 1 + 20, 0x66FFFFFF);
             }
             var o = offers.get(idx);
 
-            int y = top + 16 + row * 20;
+            int y = top + LIST_Y0 + 2 + row * ROW_H;
             int xBuyA = left + 6 + 5;
             int xBuyB = left + 6 + 5 + 18;
             int xSell = left + 6 + 5 + 18 + 18 + 24;
