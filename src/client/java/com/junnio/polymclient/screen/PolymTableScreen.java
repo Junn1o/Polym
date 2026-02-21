@@ -15,6 +15,7 @@ import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.item.ItemStack;
 
 import java.util.UUID;
 
@@ -35,12 +36,31 @@ public class PolymTableScreen extends AbstractContainerScreen<PolymTableScreenHa
         UUID uuid = Minecraft.getInstance().player.getUUID();
         this.addRenderableWidget(
                 Button.builder(Component.literal("+"), btn -> {
+                    var player = Minecraft.getInstance().player;
+                    if (player != null && player.containerMenu != null) {
+                        ItemStack carried = player.containerMenu.getCarried();
+                        if (!carried.isEmpty()) {
+                            if (!player.getInventory().add(carried.copy())) {
+                                player.drop(carried.copy(), false);
+                            }
+                            player.containerMenu.setCarried(ItemStack.EMPTY);
+                        }
+                    }
                     ClientPlayNetworking.send(new OpenShopPayLoad());
                 }).bounds(right, top, 16, 16).build()
         );
         this.addRenderableWidget(
                 Button.builder(Component.literal("-"), btn -> {
-                    //ClientPlayNetworking.send(new OpenShopByOwnerPayload(UUID.fromString("705e0a2e-2893-42c8-b31e-f4f6ea6486a1")));
+                    var player = Minecraft.getInstance().player;
+                    if (player != null && player.containerMenu != null) {
+                        ItemStack carried = player.containerMenu.getCarried();
+                        if (!carried.isEmpty()) {
+                            if (!player.getInventory().add(carried.copy())) {
+                                player.drop(carried.copy(), false);
+                            }
+                            player.containerMenu.setCarried(ItemStack.EMPTY);
+                        }
+                    }
                     ClientPlayNetworking.send(new OpenShopByOwnerPayload(uuid));
                 }).bounds(right, top+20, 16, 16).build()
         );

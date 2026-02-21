@@ -82,7 +82,7 @@ public class SellerScreenHandler extends AbstractContainerMenu {
                 return;
             }
 
-            ItemStack carried = this.getCarried();          // stack đang cầm trên cursor
+            ItemStack carried = this.getCarried();
             ItemStack current = this.offerInv.getItem(slotId);
 
             if (carried.isEmpty()) {
@@ -105,7 +105,7 @@ public class SellerScreenHandler extends AbstractContainerMenu {
 
             this.broadcastChanges();
 
-            return; // không gọi super => không move item thật
+            return;
         }
 
         super.clicked(slotId, button, clickType, player);

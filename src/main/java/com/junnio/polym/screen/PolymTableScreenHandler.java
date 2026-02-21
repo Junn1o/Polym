@@ -132,6 +132,7 @@ public class PolymTableScreenHandler extends AbstractContainerMenu {
 
     @Override
     public void removed(Player player) {
+        super.removed(player);
         for (int i = 0; i < craftingInventory.getContainerSize(); i++) {
             ItemStack itemStack = craftingInventory.removeItemNoUpdate(i);
             if (!itemStack.isEmpty()) {
@@ -140,6 +141,13 @@ public class PolymTableScreenHandler extends AbstractContainerMenu {
                     player.drop(itemStack, false);
                 }
             }
+        }
+        ItemStack carried = this.getCarried();
+        if (!carried.isEmpty()) {
+            if (!player.getInventory().add(carried)) {
+                player.drop(carried, false);
+            }
+            this.setCarried(ItemStack.EMPTY);
         }
     }
 

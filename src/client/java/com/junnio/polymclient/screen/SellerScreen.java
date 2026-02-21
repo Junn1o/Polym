@@ -195,21 +195,23 @@ public class SellerScreen extends AbstractContainerScreen<SellerScreenHandler> {
         for (int row = 0; row < visible; row++) {
             int idx = row + this.scrollOff;
             if (idx >= offers.size()) break;
+            int rowX = left + LIST_X;
             int yRow = top + LIST_Y0 + row * ROW_H;
+            int yItem = yRow + ITEM_Y_OFF;
+
+            int xBuyA = left + ITEM_X0;
+            int xBuyB = xBuyA + BUY_B_DX;
+            int xSell = xBuyA + SELL_DX;
             if (idx == this.selected) {
-                g.fill(left + 5, yRow - 1, left + 5 + 88, yRow - 1 + 20, 0x66FFFFFF);
+                g.fill(rowX, yRow - 1, rowX + ROW_W, yRow - 1 + ROW_H, 0x66FFFFFF);
             }
             var o = offers.get(idx);
 
-            int y = top + LIST_Y0 + 2 + row * ROW_H;
-            int xBuyA = left + 6 + 5;
-            int xBuyB = left + 6 + 5 + 18;
-            int xSell = left + 6 + 5 + 18 + 18 + 24;
-            renderScaledFakeItem(g, o.buyA(), xBuyA, y, ITEM_SCALE, ITEM_OFF);
+            renderScaledFakeItem(g, o.buyA(), xBuyA, yItem, ITEM_SCALE, ITEM_OFF);
             if (!o.buyB().isEmpty()) {
-                renderScaledFakeItem(g, o.buyB(), xBuyB, y, ITEM_SCALE, ITEM_OFF);
+                renderScaledFakeItem(g, o.buyB(), xBuyB, yItem, ITEM_SCALE, ITEM_OFF);
             }
-            renderScaledFakeItem(g, o.sell(), xSell, y, ITEM_SCALE, ITEM_OFF);
+            renderScaledFakeItem(g, o.sell(), xSell, yItem, ITEM_SCALE, ITEM_OFF);
             this.renderButtonArrows(g, this.leftPos, yRow +2);
         }
         this.renderScroller(g, mouseX, mouseY);
