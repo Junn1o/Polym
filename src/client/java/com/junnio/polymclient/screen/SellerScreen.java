@@ -1,6 +1,10 @@
 package com.junnio.polymclient.screen;
 
 import com.junnio.polym.net.*;
+import com.junnio.polym.net.seller.AddOfferFromSlotsPayload;
+import com.junnio.polym.net.seller.DeleteOfferPayload;
+import com.junnio.polym.net.seller.EditOfferPayload;
+import com.junnio.polym.net.seller.SaveSellerOffersPayload;
 import com.junnio.polym.screen.SellerScreenHandler;
 import com.mojang.blaze3d.platform.cursor.CursorTypes;
 import net.fabricmc.api.EnvType;
@@ -58,6 +62,7 @@ public class SellerScreen extends AbstractContainerScreen<SellerScreenHandler> {
         super(handler, inv, title);
         this.imageWidth = 276;
         this.imageHeight = 166;
+        this.inventoryLabelX = 107;
     }
     @Override
     protected void init() {
@@ -239,6 +244,7 @@ public class SellerScreen extends AbstractContainerScreen<SellerScreenHandler> {
                 g.renderItemDecorations(this.font, b, px + 26, py);
             }
             if (emptyS) {
+                System.out.println("It is working");
                 g.renderFakeItem(s, px + 26 + 58, py);
                 g.renderItemDecorations(this.font, s, px + 26 + 58, py);
             }

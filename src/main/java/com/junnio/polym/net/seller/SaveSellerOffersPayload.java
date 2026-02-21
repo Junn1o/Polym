@@ -1,13 +1,10 @@
-package com.junnio.polym.net;
+package com.junnio.polym.net.seller;
 
 import com.junnio.polym.Polym;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.Identifier;
-
-import java.util.ArrayList;
-import java.util.List;
 
 public record SaveSellerOffersPayload() implements CustomPacketPayload {
     public static final Identifier PACKET_ID = Identifier.fromNamespaceAndPath(Polym.MOD_ID, "save_seller_offers");

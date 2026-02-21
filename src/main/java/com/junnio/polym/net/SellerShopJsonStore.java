@@ -152,6 +152,13 @@ public final class SellerShopJsonStore {
         }
         return out;
     }
+    public List<ShopOfferData> getAllOffers() {
+        List<ShopOfferData> out = new ArrayList<>();
+        for (ShopEntry e : shops.values()) {
+            out.addAll(e.offers());
+        }
+        return out;
+    }
 
     private static final class RootJson { Map<String, ShopJson> shops; }
     private static final class ShopJson { String name; List<OfferJson> offers; }

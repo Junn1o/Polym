@@ -18,8 +18,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class SellerScreenHandler extends AbstractContainerMenu {
-    private final Level world;
-    private final Player playerentity;
     private final List<ShopOfferData> offers;
     public List<ShopOfferData> getOffers() {
         return List.copyOf(this.offers);
@@ -30,8 +28,7 @@ public class SellerScreenHandler extends AbstractContainerMenu {
     public static final int SLOT_SELL  = 2;
     public SellerScreenHandler(int syncId, Inventory playerInventory, Player player, ShopOpenData data) {
         super(ModScreenHandlers.SELLER_SCREEN_HANDLER, syncId);
-        this.world = playerInventory.player.level();
-        this.playerentity = player;
+        Level world = playerInventory.player.level();
         this.offers = new ArrayList<>(data.offers());
         this.addSlot(new Slot(offerInv, SLOT_BUY_A,  /*x*/ 136, /*y*/ 37));
         this.addSlot(new Slot(offerInv, SLOT_BUY_B,  /*x*/ 162, /*y*/ 37));
@@ -70,6 +67,19 @@ public class SellerScreenHandler extends AbstractContainerMenu {
         offerInv.setItem(SLOT_SELL,  ItemStack.EMPTY);
         this.broadcastChanges();
     }
+
+    @Override
+    public void removed(Player player) {
+        super.removed(player);
+        ItemStack carried = this.getCarried();
+        if (!carried.isEmpty()) {
+            if (!player.getInventory().add(carried)) {
+                player.drop(carried, false);
+            }
+            this.setCarried(ItemStack.EMPTY);
+        }
+    }
+
     @Override
     public ItemStack quickMoveStack(Player player, int i) {
         return ItemStack.EMPTY;

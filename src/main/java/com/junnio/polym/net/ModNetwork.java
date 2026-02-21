@@ -1,6 +1,7 @@
 package com.junnio.polym.net;
 
 import com.junnio.polym.Polym;
+import com.junnio.polym.net.seller.*;
 import com.junnio.polym.screen.SellerScreenHandler;
 import com.junnio.polym.screen.ShopScreenHandler;
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
@@ -9,7 +10,6 @@ import net.fabricmc.fabric.api.screenhandler.v1.ExtendedScreenHandlerFactory;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.MenuProvider;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
@@ -17,6 +17,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import org.jspecify.annotations.Nullable;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -126,6 +127,26 @@ public class ModNetwork {
 
                 sh.editOfferFromSlotsAndClear(payload.index());
                 ServerPlayNetworking.send(player, new SellerOffersSyncPayload(sh.getOffers()));
+            });
+        });
+        PayloadTypeRegistry.playC2S().register(OpenAllShopsPayload.TYPE, OpenAllShopsPayload.CODEC);
+        ServerPlayNetworking.registerGlobalReceiver(OpenAllShopsPayload.TYPE, (payload, context) -> {
+            context.server().execute(() -> {
+                ServerPlayer player = context.player();
+                SellerShopJsonStore store = SellerShopJsonStore.get(context.server());
+
+                List<ShopOfferData> offers = store.getAllOffers();
+
+                ShopOpenData openData = new ShopOpenData(offers);
+                player.openMenu(new ExtendedScreenHandlerFactory<ShopOpenData>() {
+                    @Override public ShopOpenData getScreenOpeningData(ServerPlayer p) { return openData; }
+
+                    @Override public AbstractContainerMenu createMenu(int syncId, Inventory inv, Player p) {
+                        return new ShopScreenHandler(syncId, inv, p, openData);
+                    }
+
+                    @Override public Component getDisplayName() { return Component.literal("All Shops"); }
+                });
             });
         });
     }
