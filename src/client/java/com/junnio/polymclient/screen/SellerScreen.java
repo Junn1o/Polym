@@ -2,12 +2,14 @@ package com.junnio.polymclient.screen;
 
 import com.junnio.polym.net.*;
 import com.junnio.polym.screen.SellerScreenHandler;
+import com.mojang.blaze3d.platform.cursor.CursorTypes;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
@@ -23,7 +25,9 @@ import java.util.List;
 @Environment(EnvType.CLIENT)
 public class SellerScreen extends AbstractContainerScreen<SellerScreenHandler> {
     private static final Identifier BG = Identifier.withDefaultNamespace("textures/gui/container/villager.png");
-    private static final Identifier SCROLLER_SPRITE = Identifier.withDefaultNamespace("textures/gui/sprites/container/villager/scroller.png");
+    private static final Identifier SCROLLER_SPRITE = Identifier.withDefaultNamespace("container/villager/scroller");
+    private static final Identifier SCROLLER_DISABLED_SPRITE = Identifier.withDefaultNamespace("container/villager/scroller_disabled");
+    private static final Identifier TRADE_ARROW_SPRITE = Identifier.withDefaultNamespace("container/villager/trade_arrow");
     private final List<ShopOfferData> offersView = new ArrayList<>();
     private int selected = -1;
     private int scrollOff = 0;
@@ -35,6 +39,12 @@ public class SellerScreen extends AbstractContainerScreen<SellerScreenHandler> {
     private Button addBtn, saveBtn, deleteBtn, editBtn, cancelBtn;
     private static final int LIST_Y0 = 18;
     private static final int ROW_H = 20;
+    private boolean draggingScroller = false;
+    private static final int SCROLL_X = 94;
+    private static final int SCROLL_Y = 18;
+    private static final int KNOB_W = 6;
+    private static final int KNOB_H = 27;
+    private static final int TRACK_H = 139;
     public SellerScreen(SellerScreenHandler handler, Inventory inv, Component title) {
         super(handler, inv, title);
         this.imageWidth = 276;
@@ -196,10 +206,9 @@ public class SellerScreen extends AbstractContainerScreen<SellerScreenHandler> {
 
             g.renderFakeItem(o.sell(), xSell, y);
             g.renderItemDecorations(this.font, o.sell(), xSell, y);
+            this.renderButtonArrows(g, this.leftPos, yRow + 2);
         }
-        int sx = this.leftPos + 94;
-        int sy = this.topPos + 18 + scrollerY();
-        g.blit(RenderPipelines.GUI_TEXTURED, BG, sx, sy, /*u*/ 0, /*v*/ 199, 6, 27, 512, 256);
+        this.renderScroller(g, mouseX, mouseY);
         if (this.previewOffer != null) {
             ItemStack realA = this.menu.getSlot(SellerScreenHandler.SLOT_BUY_A).getItem();
             ItemStack realB = this.menu.getSlot(SellerScreenHandler.SLOT_BUY_B).getItem();
@@ -230,7 +239,23 @@ public class SellerScreen extends AbstractContainerScreen<SellerScreenHandler> {
         }
         this.renderTooltip(g, mouseX, mouseY);
     }
+    private void renderButtonArrows(GuiGraphics guiGraphics, int baseX, int rowY) {
+        guiGraphics.blitSprite(RenderPipelines.GUI_TEXTURED, TRADE_ARROW_SPRITE, baseX + 5 + 35 + 20, rowY + 3, 10, 9);
 
+    }
+    private void renderScroller(GuiGraphics g, int mouseX, int mouseY) {
+        int sx = this.leftPos + SCROLL_X;
+        int syBase = this.topPos + SCROLL_Y;
+        if (canScroll()){
+            int sy = syBase + scrollerY();
+            g.blitSprite(RenderPipelines.GUI_TEXTURED, SCROLLER_SPRITE, sx, sy, KNOB_W, KNOB_H);
+            if (mouseX >= sx && mouseX < sx + KNOB_W && mouseY >= sy && mouseY <= sy + KNOB_H) {
+                g.requestCursor(this.draggingScroller ? CursorTypes.RESIZE_NS : CursorTypes.POINTING_HAND);
+            }
+        } else{
+            g.blitSprite(RenderPipelines.GUI_TEXTURED, SCROLLER_DISABLED_SPRITE, sx, syBase, KNOB_W, KNOB_H);
+        }
+    }
     private boolean canScroll() {
         return this.offersView.size() > 7;
     }
@@ -238,14 +263,75 @@ public class SellerScreen extends AbstractContainerScreen<SellerScreenHandler> {
     private int maxScroll() {
         return Math.max(0, this.offersView.size() - 7);
     }
-    @Override
-    public boolean mouseScrolled(double d, double e, double f, double g) {
-        if (super.mouseScrolled(d, e, f, g)) return true;
-        if (!canScroll()) return false;
-        this.scrollOff = Mth.clamp((int)(this.scrollOff - g), 0, maxScroll());
+    private boolean isMouseOverScrollTrack(double mx, double my) {
+        int i = (this.width - this.imageWidth) / 2;
+        int j = (this.height - this.imageHeight) / 2;
+
+        int x0 = i + SCROLL_X;
+        int y0 = j + SCROLL_Y;
+        return canScroll()
+                && mx > x0 && mx < (x0 + KNOB_W)
+                && my > y0 && my <= (y0 + TRACK_H + 1);
+    }
+    private void setScrollOffFromMouseY(double mouseY) {
+        int max = maxScroll();
+        int n = TRACK_H - KNOB_H;
+        double myRelative = mouseY - (this.topPos + SCROLL_Y) - (KNOB_H / 2.0);
+        double t = Mth.clamp(myRelative / (double)n, 0.0, 1.0);
+        this.scrollOff = (int)Math.round(t * max);
         updateOfferButtons();
+        updateActionButtons();
+    }
+    @Override
+    public boolean mouseScrolled(double mouseX, double mouseY, double dx, double dy) {
+        if (this.draggingScroller) return true;
+        if (super.mouseScrolled(mouseX, mouseY, dx, dy)) return true;
+        if (!canScroll()) return false;
+
+        this.scrollOff = Mth.clamp((int)(this.scrollOff - dy), 0, maxScroll());
+        updateOfferButtons();
+        updateActionButtons();
         return true;
     }
+
+    @Override
+    public boolean mouseDragged(MouseButtonEvent mouseButtonEvent, double d, double e) {
+        if (this.draggingScroller && canScroll()) {
+            int i = this.offersView.size();
+            int j = this.topPos + SCROLL_Y;      // top + 18
+            int k = j + TRACK_H;                 // +139
+            int l = i - 7;                       // maxScroll
+
+            float f = ((float)mouseButtonEvent.y() - (float)j - (KNOB_H / 2.0f)) / ((float)(k - j) - (float)KNOB_H);
+            f = f * (float)l + 0.5f;
+            this.scrollOff = Mth.clamp((int)f, 0, l);
+
+            updateOfferButtons();
+            updateActionButtons();
+            return true;
+        }
+        return super.mouseDragged(mouseButtonEvent, d, e);
+    }
+
+    @Override
+    public boolean mouseReleased(MouseButtonEvent mouseButtonEvent) {
+        if (mouseButtonEvent.button()==0 && this.draggingScroller) {
+            this.draggingScroller = false;
+            return true;
+        }
+        return super.mouseReleased(mouseButtonEvent);
+    }
+
+    @Override
+    public boolean mouseClicked(MouseButtonEvent mouseButtonEvent, boolean bl) {
+        if (mouseButtonEvent.button()==0 && canScroll() && isMouseOverScrollTrack(mouseButtonEvent.x(), mouseButtonEvent.y())) {
+            this.draggingScroller = true;
+            setScrollOffFromMouseY(mouseButtonEvent.y());
+            return true;
+        }
+        return super.mouseClicked(mouseButtonEvent, bl);
+    }
+
     private int scrollerY() {
         int total = offersView.size();
         int max = total - 7;

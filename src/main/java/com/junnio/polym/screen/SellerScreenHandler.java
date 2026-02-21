@@ -7,6 +7,7 @@ import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.inventory.ClickType;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
@@ -45,17 +46,11 @@ public class SellerScreenHandler extends AbstractContainerMenu {
         ItemStack s = offerInv.getItem(2).copy();
         if (a.isEmpty() || s.isEmpty()) return;
 
-        a.setCount(1);
-        if (!b.isEmpty()) b.setCount(1);
-        s.setCount(1);
-
         offers.set(index, new ShopOfferData(a, b.isEmpty()?ItemStack.EMPTY:b, s));
-
-        offerInv.setItem(0, ItemStack.EMPTY);
-        offerInv.setItem(1, ItemStack.EMPTY);
-        offerInv.setItem(2, ItemStack.EMPTY);
-
-        broadcastChanges();
+        offerInv.setItem(SLOT_BUY_A, ItemStack.EMPTY);
+        offerInv.setItem(SLOT_BUY_B, ItemStack.EMPTY);
+        offerInv.setItem(SLOT_SELL,  ItemStack.EMPTY);
+        this.broadcastChanges();
     }
 
     public void deleteOffer(int index) {
@@ -63,29 +58,57 @@ public class SellerScreenHandler extends AbstractContainerMenu {
         offers.remove(index);
         broadcastChanges();
     }
-    public void addOfferFromSlotsAndClear() {
+    public void addOfferFromSlots() {
         ItemStack a = offerInv.getItem(0).copy();
         ItemStack b = offerInv.getItem(1).copy();
         ItemStack s = offerInv.getItem(2).copy();
-
-        if (a.isEmpty() || s.isEmpty()) return; // buyA & sell bắt buộc
-
-        a.setCount(1);              // hoặc giữ count user đặt trong slot
-        if (!b.isEmpty()) b.setCount(1);
-        s.setCount(1);
+        if (a.isEmpty() || s.isEmpty()) return;
 
         offers.add(new ShopOfferData(a, b.isEmpty() ? ItemStack.EMPTY : b, s));
-
-        // clear 3 slot
-        offerInv.setItem(0, ItemStack.EMPTY);
-        offerInv.setItem(1, ItemStack.EMPTY);
-        offerInv.setItem(2, ItemStack.EMPTY);
-
-        this.broadcastChanges(); // sync lại cho client
+        offerInv.setItem(SLOT_BUY_A, ItemStack.EMPTY);
+        offerInv.setItem(SLOT_BUY_B, ItemStack.EMPTY);
+        offerInv.setItem(SLOT_SELL,  ItemStack.EMPTY);
+        this.broadcastChanges();
     }
     @Override
     public ItemStack quickMoveStack(Player player, int i) {
-        return null;
+        return ItemStack.EMPTY;
+    }
+
+    @Override
+    public void clicked(int slotId, int button, ClickType clickType, Player player) {
+        if (slotId >= 0 && slotId < 3) {
+            if (clickType != ClickType.PICKUP && clickType != ClickType.PICKUP_ALL) {
+                return;
+            }
+
+            ItemStack carried = this.getCarried();          // stack đang cầm trên cursor
+            ItemStack current = this.offerInv.getItem(slotId);
+
+            if (carried.isEmpty()) {
+                this.offerInv.setItem(slotId, ItemStack.EMPTY);
+                this.broadcastChanges();
+                return;
+            }
+            ItemStack ghost = carried.copy();
+
+            if (button == 1) {
+                ghost.setCount(1);
+                 if (!current.isEmpty() && ItemStack.isSameItemSameComponents(current, ghost)) {
+                     ghost.setCount(Math.min(current.getCount() + 1, ghost.getMaxStackSize()));
+                 }
+            } else {
+                ghost.setCount(Math.min(carried.getCount(), ghost.getMaxStackSize()));
+            }
+
+            this.offerInv.setItem(slotId, ghost);
+
+            this.broadcastChanges();
+
+            return; // không gọi super => không move item thật
+        }
+
+        super.clicked(slotId, button, clickType, player);
     }
 
     @Override

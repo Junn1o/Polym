@@ -58,7 +58,7 @@ public class ModNetwork {
                 ServerPlayer player = context.player();
                 if (!(player.containerMenu instanceof SellerScreenHandler sh)) return;
 
-                sh.addOfferFromSlotsAndClear();
+                sh.addOfferFromSlots();
 
                 ServerPlayNetworking.send(player, new SellerOffersSyncPayload(sh.getOffers()));
             });

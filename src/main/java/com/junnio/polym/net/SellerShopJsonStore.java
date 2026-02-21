@@ -26,7 +26,7 @@ public final class SellerShopJsonStore {
 
     private SellerShopJsonStore(MinecraftServer server) {
         this.server = server;
-        load(); // đọc file vào RAM
+        load();
     }
 
     public static SellerShopJsonStore get(MinecraftServer server) {
@@ -100,7 +100,7 @@ public final class SellerShopJsonStore {
             for (ShopOfferData o : entry.offers()) {
                 OfferJson oj = new OfferJson();
                 oj.buyA = encodeStack(o.buyA());
-                oj.buyB = encodeStack(o.buyB());   // EMPTY -> null (tuỳ bạn)
+                oj.buyB = encodeStack(o.buyB());
                 oj.sell = encodeStack(o.sell());
                 sj.offers.add(oj);
             }
@@ -112,8 +112,6 @@ public final class SellerShopJsonStore {
     }
     private StackJson encodeStack(ItemStack stack) {
         if (stack == null || stack.isEmpty()) return null;
-
-        // Lấy id item từ registry
         Identifier id = BuiltInRegistries.ITEM.getKey(stack.getItem());
         if (id == null) return null;
 
@@ -128,12 +126,10 @@ public final class SellerShopJsonStore {
 
         Identifier id = Identifier.tryParse(json.item);
         if (id == null) return ItemStack.EMPTY;
-
-        // unwrap Optional<Holder.Reference<Item>>
         Optional<Holder.Reference<Item>> opt = BuiltInRegistries.ITEM.get(id);
         if (opt.isEmpty()) return ItemStack.EMPTY;
 
-        Item item = opt.get().value(); // hoặc .get() rồi .value()
+        Item item = opt.get().value();
         int count = json.count <= 0 ? 1 : Math.min(json.count, 64);
 
         return new ItemStack(item, count);
@@ -150,7 +146,6 @@ public final class SellerShopJsonStore {
             ItemStack buyB = decodeStack(oj.buyB);
             ItemStack sell = decodeStack(oj.sell);
 
-            // buyA và sell bắt buộc
             if (buyA.isEmpty() || sell.isEmpty()) continue;
 
             out.add(new ShopOfferData(buyA, buyB, sell));
