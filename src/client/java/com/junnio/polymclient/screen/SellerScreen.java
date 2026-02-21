@@ -45,6 +45,15 @@ public class SellerScreen extends AbstractContainerScreen<SellerScreenHandler> {
     private static final int KNOB_W = 6;
     private static final int KNOB_H = 27;
     private static final int TRACK_H = 139;
+    private static final int LIST_X = 5;
+    private static final int ROW_W = 88;
+    private static final int ITEM_Y_OFF = 2;
+
+    private static final int ITEM_X0 = 11; // 6+5
+    private static final int BUY_B_DX = 18;
+    private static final int SELL_DX = 18 + 18 + 24;
+    private static final float ITEM_SCALE = 0.75f;
+    private static final float ITEM_OFF = (16f - 16f * ITEM_SCALE) / 2f;
     public SellerScreen(SellerScreenHandler handler, Inventory inv, Component title) {
         super(handler, inv, title);
         this.imageWidth = 276;
@@ -150,6 +159,7 @@ public class SellerScreen extends AbstractContainerScreen<SellerScreenHandler> {
         this.addBtn.active    = !locked;
         this.editBtn.active   = !locked && selection;
         this.deleteBtn.active = !locked && selection;
+        updateOfferButtons();
     }
 
 
@@ -195,18 +205,12 @@ public class SellerScreen extends AbstractContainerScreen<SellerScreenHandler> {
             int xBuyA = left + 6 + 5;
             int xBuyB = left + 6 + 5 + 18;
             int xSell = left + 6 + 5 + 18 + 18 + 24;
-
-            g.renderFakeItem(o.buyA(), xBuyA, y);
-            g.renderItemDecorations(this.font, o.buyA(), xBuyA, y);
-
+            renderScaledFakeItem(g, o.buyA(), xBuyA, y, ITEM_SCALE, ITEM_OFF);
             if (!o.buyB().isEmpty()) {
-                g.renderFakeItem(o.buyB(), xBuyB, y);
-                g.renderItemDecorations(this.font, o.buyB(), xBuyB, y);
+                renderScaledFakeItem(g, o.buyB(), xBuyB, y, ITEM_SCALE, ITEM_OFF);
             }
-
-            g.renderFakeItem(o.sell(), xSell, y);
-            g.renderItemDecorations(this.font, o.sell(), xSell, y);
-            this.renderButtonArrows(g, this.leftPos, yRow + 2);
+            renderScaledFakeItem(g, o.sell(), xSell, y, ITEM_SCALE, ITEM_OFF);
+            this.renderButtonArrows(g, this.leftPos, yRow +2);
         }
         this.renderScroller(g, mouseX, mouseY);
         if (this.previewOffer != null) {
@@ -239,6 +243,19 @@ public class SellerScreen extends AbstractContainerScreen<SellerScreenHandler> {
         }
         this.renderTooltip(g, mouseX, mouseY);
     }
+    private void renderScaledFakeItem(GuiGraphics g, ItemStack stack, int x, int y, float scale, float itemoff) {
+        if (stack.isEmpty()) return;
+
+        var m = g.pose();
+        m.pushMatrix();
+        m.translate(x + itemoff, y + itemoff);
+        m.scale(scale, scale);
+
+        g.renderFakeItem(stack, 0, 0);
+        g.renderItemDecorations(this.font, stack, 0, 0);
+
+        m.popMatrix();
+    }
     private void renderButtonArrows(GuiGraphics guiGraphics, int baseX, int rowY) {
         guiGraphics.blitSprite(RenderPipelines.GUI_TEXTURED, TRADE_ARROW_SPRITE, baseX + 5 + 35 + 20, rowY + 3, 10, 9);
 
@@ -264,11 +281,8 @@ public class SellerScreen extends AbstractContainerScreen<SellerScreenHandler> {
         return Math.max(0, this.offersView.size() - 7);
     }
     private boolean isMouseOverScrollTrack(double mx, double my) {
-        int i = (this.width - this.imageWidth) / 2;
-        int j = (this.height - this.imageHeight) / 2;
-
-        int x0 = i + SCROLL_X;
-        int y0 = j + SCROLL_Y;
+        int x0 = this.leftPos + SCROLL_X;
+        int y0 = this.topPos + SCROLL_Y;
         return canScroll()
                 && mx > x0 && mx < (x0 + KNOB_W)
                 && my > y0 && my <= (y0 + TRACK_H + 1);
