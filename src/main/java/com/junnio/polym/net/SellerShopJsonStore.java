@@ -159,7 +159,20 @@ public final class SellerShopJsonStore {
         }
         return out;
     }
+    public List<ShopOfferViewData> getAllOfferViews() {
+        List<ShopOfferViewData> out = new ArrayList<>();
 
+        for (var entry : shops.entrySet()) {
+            UUID owner = entry.getKey();
+            ShopEntry shop = entry.getValue();
+            String ownerName = shop.name();
+
+            for (ShopOfferData o : shop.offers()) {
+                out.add(new ShopOfferViewData(o, owner, ownerName));
+            }
+        }
+        return out;
+    }
     private static final class RootJson { Map<String, ShopJson> shops; }
     private static final class ShopJson { String name; List<OfferJson> offers; }
     private static final class OfferJson { StackJson buyA, buyB, sell; }

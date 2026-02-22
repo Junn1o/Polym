@@ -5,10 +5,12 @@ import com.junnio.polym.screen.ShopScreenHandler;
 import com.mojang.blaze3d.platform.cursor.CursorTypes;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.input.MouseButtonEvent;
+import net.minecraft.client.multiplayer.PlayerInfo;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
@@ -20,6 +22,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 @Environment(EnvType.CLIENT)
 public class ShopScreen extends AbstractContainerScreen<ShopScreenHandler> {
@@ -27,12 +30,9 @@ public class ShopScreen extends AbstractContainerScreen<ShopScreenHandler> {
     private static final Identifier SCROLLER_SPRITE = Identifier.withDefaultNamespace("container/villager/scroller");
     private static final Identifier SCROLLER_DISABLED_SPRITE = Identifier.withDefaultNamespace("container/villager/scroller_disabled");
     private static final Identifier TRADE_ARROW_SPRITE = Identifier.withDefaultNamespace("container/villager/trade_arrow");
-    private final List<ShopOfferData> offersView = new ArrayList<>();
     private int selected = -1;
     private int scrollOff = 0;
     private final OfferButton[] offerButtons = new OfferButton[7];
-    @Nullable
-    private ShopOfferData previewOffer = null;
     private static final int LIST_Y0 = 18;
     private static final int ROW_H = 20;
     private boolean draggingScroller = false;
@@ -50,7 +50,9 @@ public class ShopScreen extends AbstractContainerScreen<ShopScreenHandler> {
     private static final int SELL_DX = 18 + 18 + 24;
     private static final float ITEM_SCALE = 0.75f;
     private static final float ITEM_OFF = (16f - 16f * ITEM_SCALE) / 2f;
-
+    private final List<ShopOfferViewData> offersView = new ArrayList<>();
+    @Nullable
+    private ShopOfferViewData previewOffer = null;
     public ShopScreen(ShopScreenHandler handler, Inventory inv, Component title) {
         super(handler, inv, title);
         this.imageWidth = 276;
@@ -76,7 +78,7 @@ public class ShopScreen extends AbstractContainerScreen<ShopScreenHandler> {
                     this.previewOffer = this.offersView.get(idx);
                 } else {
                     this.previewOffer = null;
-                };
+                }
             }
             ));
             y += ROW_H;
@@ -91,8 +93,23 @@ public class ShopScreen extends AbstractContainerScreen<ShopScreenHandler> {
         updateOfferButtons();
     }
 
+    @Nullable
+    private PlayerInfo getPlayerInfo(UUID uuid) {
+        var conn = Minecraft.getInstance().getConnection();
+        if (conn == null) return null;
+        return conn.getPlayerInfo(uuid);
+    }
 
-    public void setOffersFromServer(List<ShopOfferData> offers) {
+    private void renderOwnerHead(GuiGraphics g, int x, int y, UUID ownerUuid) {
+        PlayerInfo info = getPlayerInfo(ownerUuid);
+        if (info == null) return;
+
+        Identifier skin = info.getSkin().body().texturePath();
+
+        g.blit(RenderPipelines.GUI_TEXTURED, skin, x, y, 8.0f, 8.0f, 8, 8, 64, 64);
+        g.blit(RenderPipelines.GUI_TEXTURED, skin, x, y, 40.0f, 8.0f, 8, 8, 64, 64);
+    }
+    public void setOffersFromServer(List<ShopOfferViewData> offers) {
         offersView.clear();
         offersView.addAll(offers);
         updateOfferButtons();
@@ -132,7 +149,8 @@ public class ShopScreen extends AbstractContainerScreen<ShopScreenHandler> {
             if (idx == this.selected) {
                 g.fill(rowX, yRow - 1, rowX + ROW_W, yRow - 1 + ROW_H, 0x66FFFFFF);
             }
-            var o = offers.get(idx);
+            var view = offers.get(idx);
+            var o = view.offer();
 
             renderScaledFakeItem(g, o.buyA(), xBuyA, yItem, ITEM_SCALE, ITEM_OFF);
             if (!o.buyB().isEmpty()) {
@@ -153,9 +171,9 @@ public class ShopScreen extends AbstractContainerScreen<ShopScreenHandler> {
             int px = this.leftPos + 136;
             int py = this.topPos + 37;
 
-            ItemStack a = previewOffer.buyA();
-            ItemStack b = previewOffer.buyB();
-            ItemStack s = previewOffer.sell();
+            ItemStack a = previewOffer.offer().buyA();
+            ItemStack b = previewOffer.offer().buyB();
+            ItemStack s = previewOffer.offer().sell();
 
             if (emptyA) {
                 g.renderFakeItem(a, px, py);
@@ -169,6 +187,9 @@ public class ShopScreen extends AbstractContainerScreen<ShopScreenHandler> {
                 g.renderFakeItem(s, px + 26 + 58, py);
                 g.renderItemDecorations(this.font, s, px + 26 + 58, py);
             }
+            int hx = this.leftPos + this.imageWidth - 16 - 6;
+            int hy = this.topPos + 6;
+            renderOwnerHead(g, hx, hy, previewOffer.ownerUuid());
         }
         this.renderTooltip(g, mouseX, mouseY);
     }

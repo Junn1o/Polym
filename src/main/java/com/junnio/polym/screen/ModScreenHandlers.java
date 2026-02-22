@@ -1,6 +1,7 @@
 package com.junnio.polym.screen;
 
 import com.junnio.polym.Polym;
+import com.junnio.polym.net.AllShopOpenData;
 import com.junnio.polym.net.ShopOpenData;
 import net.fabricmc.fabric.api.screenhandler.v1.ExtendedScreenHandlerType;
 import net.minecraft.core.Registry;
@@ -15,10 +16,10 @@ public class ModScreenHandlers{
                     (syncId, inventory) -> new PolymTableScreenHandler(syncId, inventory, inventory.player),
                     FeatureFlagSet.of()
             );
-    public static final ExtendedScreenHandlerType<ShopScreenHandler, ShopOpenData> SHOP_SCREEN_HANDLER =
+    public static final ExtendedScreenHandlerType<ShopScreenHandler, AllShopOpenData> SHOP_SCREEN_HANDLER =
             new ExtendedScreenHandlerType<>(
                     (syncId, inventory, data) -> new ShopScreenHandler(syncId, inventory, inventory.player, data),
-                    ShopOpenData.CODEC
+                    AllShopOpenData.CODEC
             );
     public static final ExtendedScreenHandlerType<SellerScreenHandler, ShopOpenData> SELLER_SCREEN_HANDLER =
             new ExtendedScreenHandlerType<>(

@@ -1,6 +1,8 @@
 package com.junnio.polym.screen;
 
+import com.junnio.polym.net.AllShopOpenData;
 import com.junnio.polym.net.ShopOfferData;
+import com.junnio.polym.net.ShopOfferViewData;
 import com.junnio.polym.net.ShopOpenData;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.Container;
@@ -17,15 +19,15 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class ShopScreenHandler extends AbstractContainerMenu {
-    private final List<ShopOfferData> offers;
-    public List<ShopOfferData> getOffers() {
+    private final List<ShopOfferViewData> offers;
+    public List<ShopOfferViewData> getOffers() {
         return List.copyOf(offers);
     }
 
     public static final int SLOT_BUY_A = 0;
     public static final int SLOT_BUY_B = 1;
     public static final int SLOT_SELL  = 2;
-    public ShopScreenHandler(int syncId, Inventory playerInventory, Player player, ShopOpenData data) {
+    public ShopScreenHandler(int syncId, Inventory playerInventory, Player player, AllShopOpenData data) {
         super(ModScreenHandlers.SHOP_SCREEN_HANDLER, syncId);
         Level world = playerInventory.player.level();
         this.offers = new ArrayList<>(data.offers());
