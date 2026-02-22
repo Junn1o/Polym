@@ -105,9 +105,14 @@ public class ShopScreen extends AbstractContainerScreen<ShopScreenHandler> {
         if (info == null) return;
 
         Identifier skin = info.getSkin().body().texturePath();
+        var pose = g.pose();
+        pose.pushMatrix();
+        pose.translate(x, y);
+        pose.scale(2.0f, 2.0f);
+        g.blit(RenderPipelines.GUI_TEXTURED, skin, 0, 0, 8.0f, 8.0f, 8, 8, 64, 64);
+        g.blit(RenderPipelines.GUI_TEXTURED, skin, 0, 0, 40.0f, 8.0f, 8, 8, 64, 64);
 
-        g.blit(RenderPipelines.GUI_TEXTURED, skin, x, y, 8.0f, 8.0f, 8, 8, 64, 64);
-        g.blit(RenderPipelines.GUI_TEXTURED, skin, x, y, 40.0f, 8.0f, 8, 8, 64, 64);
+        pose.popMatrix();
     }
     public void setOffersFromServer(List<ShopOfferViewData> offers) {
         offersView.clear();
@@ -190,6 +195,18 @@ public class ShopScreen extends AbstractContainerScreen<ShopScreenHandler> {
             int hx = this.leftPos + this.imageWidth - 16 - 6;
             int hy = this.topPos + 6;
             renderOwnerHead(g, hx, hy, previewOffer.ownerUuid());
+            int headSize = 16;
+            int gap = 4;
+            String name = previewOffer.ownerName();
+            if (name != null && !name.isBlank()) {
+                int maxW = 80;
+                name = this.font.plainSubstrByWidth(name, maxW);
+                int w = this.font.width(name);
+                int tx = hx - gap - w;
+                int ty = hy + (headSize - this.font.lineHeight) / 2;
+                g.fill(tx - 2, ty - 2, hx - gap + 2, ty + this.font.lineHeight + 2, 0x80000000);
+                g.drawString(this.font, name, tx, ty, 0xFFFFFFFF, true);
+            }
         }
         this.renderTooltip(g, mouseX, mouseY);
     }
