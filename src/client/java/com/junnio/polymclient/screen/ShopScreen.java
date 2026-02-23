@@ -13,6 +13,7 @@ import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.gui.screens.inventory.tooltip.ClientTooltipComponent;
 import net.minecraft.client.gui.screens.inventory.tooltip.DefaultTooltipPositioner;
+import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.multiplayer.PlayerInfo;
 import net.minecraft.client.renderer.RenderPipelines;
@@ -24,6 +25,7 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.Nullable;
 
+import java.text.Normalizer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -57,6 +59,7 @@ public class ShopScreen extends AbstractContainerScreen<ShopScreenHandler> {
     private final List<ShopOfferViewData> offersView = new ArrayList<>();
     private EditBox searchBox;
     private String lastQuery = "";
+    private final List<ShopOfferViewData> allOffers = new ArrayList<>();
     @Nullable
     private ShopOfferViewData previewOffer = null;
     public ShopScreen(ShopScreenHandler handler, Inventory inv, Component title) {
@@ -89,8 +92,9 @@ public class ShopScreen extends AbstractContainerScreen<ShopScreenHandler> {
             ));
             y += ROW_H;
         }
-        offersView.clear();
-        offersView.addAll(this.menu.getOffers());
+        allOffers.clear();
+        allOffers.addAll(this.menu.getOffers());
+        applyFilter("");
         updateOfferButtons();
 
         this.searchBox = new EditBox(this.font, x, this.topPos + 4, 80, 12, Component.literal("Search"));
@@ -249,26 +253,56 @@ public class ShopScreen extends AbstractContainerScreen<ShopScreenHandler> {
                     null
             );
         }
-        String q = this.searchBox.getValue();
+        String q = this.searchBox != null ? this.searchBox.getValue() : "";
         if (!q.equals(this.lastQuery)) {
             this.lastQuery = q;
-            //applyFilter(q);
+            applyFilter(q);
         }
         this.renderTooltip(g, mouseX, mouseY);
     }
-    private int getHoveredOfferIndex(int mouseX, int mouseY) {
-        int x0 = this.leftPos + LIST_X;
-        int y0 = this.topPos + LIST_Y0;
+    public void setOffersFromServer(List<ShopOfferViewData> offers) {
+        allOffers.clear();
+        allOffers.addAll(offers);
+        applyFilter(this.searchBox != null ? this.searchBox.getValue() : "");
+    }
+    private static String fold(String s) {
+        if (s == null) return "";
+        String n = Normalizer.normalize(s, Normalizer.Form.NFD);
+        n = n.replaceAll("\\p{M}+", ""); // bỏ dấu
+        n = n.replace('đ', 'd').replace('Đ', 'D');
+        return n.toLowerCase();
+    }
+    private void applyFilter(String queryRaw) {
+        String q = fold(queryRaw).trim();
+        if (q.isEmpty()) {
+            offersView.clear();
+            offersView.addAll(allOffers);
+            this.scrollOff = Mth.clamp(this.scrollOff, 0, Math.max(0, offersView.size() - 7));
+            updateOfferButtons();
+            return;
+        }
 
-        int x1 = x0 + ROW_W;
-        int y1 = y0 + 7 * ROW_H;
+        offersView.clear();
 
-        if (mouseX < x0 || mouseX >= x1 || mouseY < y0 || mouseY >= y1) return -1;
+        for (ShopOfferViewData view : allOffers) {
+            ItemStack sell = view.offer().sell();
+            if (sell == null || sell.isEmpty()) continue;
+            String id = "";
+            var key = net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(sell.getItem());
+            if (key != null) id = key.toString();
+            String name = sell.getHoverName().getString();
 
-        int row = (mouseY - y0) / ROW_H;
-        int idx = row + this.scrollOff;
+            String hay1 = fold(id);
+            String hay2 = fold(name);
 
-        return (row >= 0 && row < 7 && idx >= 0 && idx < this.offersView.size()) ? idx : -1;
+            boolean ok = hay1.contains(q) || hay2.contains(q);
+            if (ok) offersView.add(view);
+        }
+        this.scrollOff = 0;
+        this.selected = offersView.isEmpty() ? -1 : 0;
+        this.previewOffer = offersView.isEmpty() ? null : offersView.get(0);
+
+        updateOfferButtons();
     }
     private void renderScaledFakeItem(GuiGraphics g, ItemStack stack, int x, int y, float scale, float itemoff) {
         if (stack.isEmpty()) return;
@@ -358,6 +392,20 @@ public class ShopScreen extends AbstractContainerScreen<ShopScreenHandler> {
             return true;
         }
         return super.mouseReleased(mouseButtonEvent);
+    }
+
+    @Override
+    public boolean keyPressed(KeyEvent keyEvent) {
+        if (this.searchBox != null && this.searchBox.isFocused()) {
+            if (this.searchBox.keyPressed(keyEvent)) {
+                return true;
+            }
+            var invKey = Minecraft.getInstance().options.keyInventory;
+            if (invKey.matches(keyEvent)) {
+                return true;
+            }
+        }
+        return super.keyPressed(keyEvent);
     }
 
     @Override
