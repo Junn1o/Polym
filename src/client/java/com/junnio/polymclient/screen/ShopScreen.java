@@ -9,6 +9,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.gui.screens.inventory.tooltip.ClientTooltipComponent;
 import net.minecraft.client.gui.screens.inventory.tooltip.DefaultTooltipPositioner;
@@ -54,6 +55,8 @@ public class ShopScreen extends AbstractContainerScreen<ShopScreenHandler> {
     private static final float ITEM_SCALE = 0.75f;
     private static final float ITEM_OFF = (16f - 16f * ITEM_SCALE) / 2f;
     private final List<ShopOfferViewData> offersView = new ArrayList<>();
+    private EditBox searchBox;
+    private String lastQuery = "";
     @Nullable
     private ShopOfferViewData previewOffer = null;
     public ShopScreen(ShopScreenHandler handler, Inventory inv, Component title) {
@@ -68,7 +71,7 @@ public class ShopScreen extends AbstractContainerScreen<ShopScreenHandler> {
 
         int left = this.leftPos;
         int top  = this.topPos;
-
+        int x = left + 110;
         int y = top + LIST_Y0;
         for (int i = 0; i < 7; i++) {
             int row = i;
@@ -89,6 +92,14 @@ public class ShopScreen extends AbstractContainerScreen<ShopScreenHandler> {
         offersView.clear();
         offersView.addAll(this.menu.getOffers());
         updateOfferButtons();
+
+        this.searchBox = new EditBox(this.font, x, this.topPos + 4, 80, 12, Component.literal("Search"));
+        this.searchBox.setMaxLength(64);
+        this.searchBox.setBordered(true);
+        this.searchBox.setVisible(true);
+        this.searchBox.setValue("");
+        this.addRenderableWidget(this.searchBox);
+        this.setInitialFocus(this.searchBox);
     }
     @Nullable
     private ShopOfferViewData getHoveredOffer(int mouseX, int mouseY) {
@@ -238,6 +249,11 @@ public class ShopScreen extends AbstractContainerScreen<ShopScreenHandler> {
                     null
             );
         }
+        String q = this.searchBox.getValue();
+        if (!q.equals(this.lastQuery)) {
+            this.lastQuery = q;
+            //applyFilter(q);
+        }
         this.renderTooltip(g, mouseX, mouseY);
     }
     private int getHoveredOfferIndex(int mouseX, int mouseY) {
@@ -253,25 +269,6 @@ public class ShopScreen extends AbstractContainerScreen<ShopScreenHandler> {
         int idx = row + this.scrollOff;
 
         return (row >= 0 && row < 7 && idx >= 0 && idx < this.offersView.size()) ? idx : -1;
-    }
-    private void renderOfferOwnerTooltip(GuiGraphics g, int mouseX, int mouseY) {
-        int idx = getHoveredOfferIndex(mouseX, mouseY);
-        if (idx == -1) return;
-
-        var view = this.offersView.get(idx);
-        String name = view.ownerName();
-        if (name == null || name.isBlank()) return;
-
-        var comp = new OwnerTooltip(view.ownerUuid(), name);
-
-        g.renderTooltip(
-                this.font,
-                List.of(comp),
-                mouseX,
-                mouseY,
-                DefaultTooltipPositioner.INSTANCE,
-                null
-        );
     }
     private void renderScaledFakeItem(GuiGraphics g, ItemStack stack, int x, int y, float scale, float itemoff) {
         if (stack.isEmpty()) return;
