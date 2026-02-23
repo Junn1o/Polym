@@ -6,9 +6,12 @@ import com.mojang.blaze3d.platform.cursor.CursorTypes;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import net.minecraft.client.gui.screens.inventory.tooltip.ClientTooltipComponent;
+import net.minecraft.client.gui.screens.inventory.tooltip.DefaultTooltipPositioner;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.multiplayer.PlayerInfo;
 import net.minecraft.client.renderer.RenderPipelines;
@@ -45,7 +48,7 @@ public class ShopScreen extends AbstractContainerScreen<ShopScreenHandler> {
     private static final int ROW_W = 88;
     private static final int ITEM_Y_OFF = 2;
 
-    private static final int ITEM_X0 = 11; // 6+5
+    private static final int ITEM_X0 = 11;
     private static final int BUY_B_DX = 18;
     private static final int SELL_DX = 18 + 18 + 24;
     private static final float ITEM_SCALE = 0.75f;
@@ -83,16 +86,27 @@ public class ShopScreen extends AbstractContainerScreen<ShopScreenHandler> {
             ));
             y += ROW_H;
         }
-        int btnW = 60;
-        int btnH = 25;
-
-        int xOutside = this.leftPos + this.imageWidth;
-        int yBase = this.topPos;
         offersView.clear();
         offersView.addAll(this.menu.getOffers());
         updateOfferButtons();
     }
+    @Nullable
+    private ShopOfferViewData getHoveredOffer(int mouseX, int mouseY) {
+        int x0 = this.leftPos + LIST_X;
+        int y0 = this.topPos + LIST_Y0;
+        int x1 = x0 + ROW_W;
+        int y1 = y0 + 7 * ROW_H;
 
+        if (mouseX < x0 || mouseX >= x1 || mouseY < y0 || mouseY >= y1) return null;
+
+        int row = (mouseY - y0) / ROW_H;
+        int idx = row + this.scrollOff;
+
+        if (row < 0 || row >= 7) return null;
+        if (idx < 0 || idx >= this.offersView.size()) return null;
+
+        return this.offersView.get(idx);
+    }
     @Nullable
     private PlayerInfo getPlayerInfo(UUID uuid) {
         var conn = Minecraft.getInstance().getConnection();
@@ -108,16 +122,11 @@ public class ShopScreen extends AbstractContainerScreen<ShopScreenHandler> {
         var pose = g.pose();
         pose.pushMatrix();
         pose.translate(x, y);
-        pose.scale(2.0f, 2.0f);
+        pose.scale(1.0f, 1.0f);
         g.blit(RenderPipelines.GUI_TEXTURED, skin, 0, 0, 8.0f, 8.0f, 8, 8, 64, 64);
         g.blit(RenderPipelines.GUI_TEXTURED, skin, 0, 0, 40.0f, 8.0f, 8, 8, 64, 64);
 
         pose.popMatrix();
-    }
-    public void setOffersFromServer(List<ShopOfferViewData> offers) {
-        offersView.clear();
-        offersView.addAll(offers);
-        updateOfferButtons();
     }
     private void updateOfferButtons() {
         for (int i = 0; i < 7; i++) {
@@ -194,21 +203,75 @@ public class ShopScreen extends AbstractContainerScreen<ShopScreenHandler> {
             }
             int hx = this.leftPos + this.imageWidth - 16 - 6;
             int hy = this.topPos + 6;
+
             renderOwnerHead(g, hx, hy, previewOffer.ownerUuid());
-            int headSize = 16;
-            int gap = 4;
+
             String name = previewOffer.ownerName();
             if (name != null && !name.isBlank()) {
+                int gap = 4;
                 int maxW = 80;
                 name = this.font.plainSubstrByWidth(name, maxW);
-                int w = this.font.width(name);
-                int tx = hx - gap - w;
-                int ty = hy + (headSize - this.font.lineHeight) / 2;
-                g.fill(tx - 2, ty - 2, hx - gap + 2, ty + this.font.lineHeight + 2, 0x80000000);
-                g.drawString(this.font, name, tx, ty, 0xFFFFFFFF, true);
+
+                float scale = 0.75f;
+                int wScaled = (int)(this.font.width(name) * scale);
+                int tx = hx - gap - wScaled;
+
+                int ty = hy + (16 - (int)(this.font.lineHeight * scale)) / 2;
+                ty -= 3;
+                var pose = g.pose();
+                pose.pushMatrix();
+                pose.translate(tx, ty);
+                pose.scale(scale, scale);
+                g.drawString(this.font, name, 0, 0, 0xFFFFFFFF, true);
+                pose.popMatrix();
             }
         }
+        ShopOfferViewData hovered = getHoveredOffer(mouseX, mouseY);
+        if (hovered != null) {
+            var comp = new OwnerTooltip(hovered.ownerUuid(), hovered.ownerName());
+            g.renderTooltip(
+                    this.font,
+                    List.of(comp),
+                    mouseX,
+                    mouseY,
+                    DefaultTooltipPositioner.INSTANCE,
+                    null
+            );
+        }
         this.renderTooltip(g, mouseX, mouseY);
+    }
+    private int getHoveredOfferIndex(int mouseX, int mouseY) {
+        int x0 = this.leftPos + LIST_X;
+        int y0 = this.topPos + LIST_Y0;
+
+        int x1 = x0 + ROW_W;
+        int y1 = y0 + 7 * ROW_H;
+
+        if (mouseX < x0 || mouseX >= x1 || mouseY < y0 || mouseY >= y1) return -1;
+
+        int row = (mouseY - y0) / ROW_H;
+        int idx = row + this.scrollOff;
+
+        return (row >= 0 && row < 7 && idx >= 0 && idx < this.offersView.size()) ? idx : -1;
+    }
+    private void renderOfferOwnerTooltip(GuiGraphics g, int mouseX, int mouseY) {
+        int idx = getHoveredOfferIndex(mouseX, mouseY);
+        if (idx == -1) return;
+
+        var view = this.offersView.get(idx);
+        String name = view.ownerName();
+        if (name == null || name.isBlank()) return;
+
+        var comp = new OwnerTooltip(view.ownerUuid(), name);
+
+        g.renderTooltip(
+                this.font,
+                List.of(comp),
+                mouseX,
+                mouseY,
+                DefaultTooltipPositioner.INSTANCE,
+                null
+        );
     }
     private void renderScaledFakeItem(GuiGraphics g, ItemStack stack, int x, int y, float scale, float itemoff) {
         if (stack.isEmpty()) return;
@@ -277,9 +340,9 @@ public class ShopScreen extends AbstractContainerScreen<ShopScreenHandler> {
     public boolean mouseDragged(MouseButtonEvent mouseButtonEvent, double d, double e) {
         if (this.draggingScroller && canScroll()) {
             int i = this.offersView.size();
-            int j = this.topPos + SCROLL_Y;      // top + 18
-            int k = j + TRACK_H;                 // +139
-            int l = i - 7;                       // maxScroll
+            int j = this.topPos + SCROLL_Y;
+            int k = j + TRACK_H;
+            int l = i - 7;
 
             float f = ((float)mouseButtonEvent.y() - (float)j - (KNOB_H / 2.0f)) / ((float)(k - j) - (float)KNOB_H);
             f = f * (float)l + 0.5f;
@@ -336,6 +399,62 @@ public class ShopScreen extends AbstractContainerScreen<ShopScreenHandler> {
         OfferButton(int x, int y, int rowIndex, Button.OnPress onPress) {
             super(x, y, 88, 20, CommonComponents.EMPTY, onPress, DEFAULT_NARRATION);
             this.rowIndex = rowIndex;
+        }
+    }
+    private class OwnerTooltip implements ClientTooltipComponent {
+        private static final int ICON = 8;
+        private static final int GAP = 4;
+        private static final int MAX_W = 120;
+
+        private final UUID uuid;
+        private final String name;
+        private final String fitted;
+
+        OwnerTooltip(UUID uuid, String name) {
+            this.uuid = uuid;
+            this.name = name == null ? "" : name;
+            int textMax = MAX_W - ICON - GAP;
+            this.fitted = ShopScreen.this.font.plainSubstrByWidth(this.name, Math.max(0, textMax));
+        }
+
+        @Override
+        public int getWidth(Font font) {
+            int wText = font.width(fitted);
+            return Math.min(MAX_W, ICON + GAP + wText);
+        }
+
+        @Override
+        public int getHeight(Font font) {
+            return ICON;
+        }
+
+        @Override
+        public void renderText(GuiGraphics g, Font font, int x, int y) {
+            int ty = y + (ICON - font.lineHeight) / 2;
+            g.drawString(font, fitted, x + ICON + GAP, ty, 0xFFFFFFFF, true);
+        }
+
+        @Override
+        public void renderImage(Font font, int x, int y, int width, int height, GuiGraphics g) {
+            PlayerInfo info = ShopScreen.this.getPlayerInfo(uuid);
+
+            if (info == null) {
+                g.fill(x, y, x + ICON, y + ICON, 0xFF3A3A3A);
+                g.drawString(font, "?", x + 5, y + 4, 0xFFFFFFFF, true);
+                return;
+            }
+
+            Identifier skin = info.getSkin().body().texturePath();
+
+            var pose = g.pose();
+            pose.pushMatrix();
+            pose.translate(x, y);
+            pose.scale(1.0f, 1.0f);
+
+            g.blit(RenderPipelines.GUI_TEXTURED, skin, 0, 0, 8.0f, 8.0f, 8, 8, 64, 64);
+            g.blit(RenderPipelines.GUI_TEXTURED, skin, 0, 0, 40.0f, 8.0f, 8, 8, 64, 64);
+
+            pose.popMatrix();
         }
     }
 }
