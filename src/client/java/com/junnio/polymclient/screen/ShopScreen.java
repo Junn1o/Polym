@@ -36,6 +36,7 @@ public class ShopScreen extends AbstractContainerScreen<ShopScreenHandler> {
     private static final Identifier SCROLLER_SPRITE = Identifier.withDefaultNamespace("container/villager/scroller");
     private static final Identifier SCROLLER_DISABLED_SPRITE = Identifier.withDefaultNamespace("container/villager/scroller_disabled");
     private static final Identifier TRADE_ARROW_SPRITE = Identifier.withDefaultNamespace("container/villager/trade_arrow");
+    private static final Identifier SEARCH_SPRITE = Identifier.withDefaultNamespace("icon/search");
     private int selected = -1;
     private int scrollOff = 0;
     private final OfferButton[] offerButtons = new OfferButton[7];
@@ -74,7 +75,6 @@ public class ShopScreen extends AbstractContainerScreen<ShopScreenHandler> {
 
         int left = this.leftPos;
         int top  = this.topPos;
-        int x = left + 110;
         int y = top + LIST_Y0;
         for (int i = 0; i < 7; i++) {
             int row = i;
@@ -97,13 +97,14 @@ public class ShopScreen extends AbstractContainerScreen<ShopScreenHandler> {
         applyFilter("");
         updateOfferButtons();
 
-        this.searchBox = new EditBox(this.font, x, this.topPos + 4, 80, 12, Component.literal("Search"));
+        this.searchBox = new EditBox(this.font, this.leftPos + 119, this.topPos + 4, 80, 12, Component.literal("Search"));
         this.searchBox.setMaxLength(64);
         this.searchBox.setBordered(true);
         this.searchBox.setVisible(true);
         this.searchBox.setValue("");
         this.addRenderableWidget(this.searchBox);
-        this.setInitialFocus(this.searchBox);
+        if (this.searchBox != null) this.searchBox.setFocused(false);
+        this.setFocused(null);
     }
     @Nullable
     private ShopOfferViewData getHoveredOffer(int mouseX, int mouseY) {
@@ -258,7 +259,11 @@ public class ShopScreen extends AbstractContainerScreen<ShopScreenHandler> {
             this.lastQuery = q;
             applyFilter(q);
         }
+        renderSearchIcon(g, this.leftPos + 105, this.topPos + 4);
         this.renderTooltip(g, mouseX, mouseY);
+    }
+    private void renderSearchIcon(GuiGraphics guiGraphics, int baseX, int rowY) {
+        guiGraphics.blitSprite(RenderPipelines.GUI_TEXTURED, SEARCH_SPRITE, baseX, rowY, 12, 12);
     }
     public void setOffersFromServer(List<ShopOfferViewData> offers) {
         allOffers.clear();
@@ -319,7 +324,6 @@ public class ShopScreen extends AbstractContainerScreen<ShopScreenHandler> {
     }
     private void renderButtonArrows(GuiGraphics guiGraphics, int baseX, int rowY) {
         guiGraphics.blitSprite(RenderPipelines.GUI_TEXTURED, TRADE_ARROW_SPRITE, baseX + 5 + 35 + 20, rowY + 3, 10, 9);
-
     }
     private void renderScroller(GuiGraphics g, int mouseX, int mouseY) {
         int sx = this.leftPos + SCROLL_X;
@@ -404,6 +408,12 @@ public class ShopScreen extends AbstractContainerScreen<ShopScreenHandler> {
             if (invKey.matches(keyEvent)) {
                 return true;
             }
+            var keyCode = org.lwjgl.glfw.GLFW.GLFW_KEY_ESCAPE;
+            if (keyEvent.key() == keyCode) {
+                this.searchBox.setFocused(false);
+                this.setFocused(null);
+                return true;
+            }
         }
         return super.keyPressed(keyEvent);
     }
@@ -414,6 +424,13 @@ public class ShopScreen extends AbstractContainerScreen<ShopScreenHandler> {
             this.draggingScroller = true;
             setScrollOffFromMouseY(mouseButtonEvent.y());
             return true;
+        }
+        if (this.searchBox != null) {
+            boolean inside = this.searchBox.isMouseOver(mouseButtonEvent.x(), mouseButtonEvent.y());
+            if (!inside) {
+                this.searchBox.setFocused(false);
+                this.setFocused(null);
+            }
         }
         return super.mouseClicked(mouseButtonEvent, bl);
     }
