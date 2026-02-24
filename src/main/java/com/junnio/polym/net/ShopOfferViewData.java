@@ -2,7 +2,6 @@ package com.junnio.polym.net;
 
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
-import net.minecraft.world.entity.player.PlayerSkin;
 
 import java.util.UUID;
 

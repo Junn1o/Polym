@@ -8,11 +8,9 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.ClickType;
-import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
-import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -28,7 +26,6 @@ public class SellerScreenHandler extends AbstractContainerMenu {
     public static final int SLOT_SELL  = 2;
     public SellerScreenHandler(int syncId, Inventory playerInventory, Player player, ShopOpenData data) {
         super(ModScreenHandlers.SELLER_SCREEN_HANDLER, syncId);
-        Level world = playerInventory.player.level();
         this.offers = new ArrayList<>(data.offers());
         this.addSlot(new Slot(offerInv, SLOT_BUY_A,  /*x*/ 136, /*y*/ 37));
         this.addSlot(new Slot(offerInv, SLOT_BUY_B,  /*x*/ 162, /*y*/ 37));

@@ -1,13 +1,9 @@
 package com.junnio.polym.screen;
 
 import com.junnio.polym.net.AllShopOpenData;
-import com.junnio.polym.net.ShopOfferData;
 import com.junnio.polym.net.ShopOfferViewData;
-import com.junnio.polym.net.ShopOpenData;
-import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.Container;
 import net.minecraft.world.SimpleContainer;
-import net.minecraft.world.entity.npc.ClientSideMerchant;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;

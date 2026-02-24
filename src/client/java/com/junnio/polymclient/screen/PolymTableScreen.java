@@ -2,7 +2,6 @@ package com.junnio.polymclient.screen;
 
 import com.junnio.polym.net.OpenAllShopsPayload;
 import com.junnio.polym.net.seller.OpenShopByOwnerPayload;
-import com.junnio.polym.net.OpenShopPayLoad;
 import com.junnio.polym.screen.PolymTableScreenHandler;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;

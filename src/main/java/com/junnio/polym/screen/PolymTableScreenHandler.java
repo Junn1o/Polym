@@ -3,7 +3,6 @@ package com.junnio.polym.screen;
 import com.junnio.polym.recipe.ModRecipes;
 import com.junnio.polym.recipe.PolymRecipe;
 import com.junnio.polym.sound.ModSounds;
-import java.util.Optional;
 import net.minecraft.world.Container;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
@@ -17,6 +16,8 @@ import net.minecraft.world.item.crafting.CraftingRecipe;
 import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.level.Level;
+
+import java.util.Optional;
 
 public class PolymTableScreenHandler extends AbstractContainerMenu {
     private final Level world;

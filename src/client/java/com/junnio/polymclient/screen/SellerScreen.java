@@ -1,6 +1,6 @@
 package com.junnio.polymclient.screen;
 
-import com.junnio.polym.net.*;
+import com.junnio.polym.net.ShopOfferData;
 import com.junnio.polym.net.seller.AddOfferFromSlotsPayload;
 import com.junnio.polym.net.seller.DeleteOfferPayload;
 import com.junnio.polym.net.seller.EditOfferPayload;
