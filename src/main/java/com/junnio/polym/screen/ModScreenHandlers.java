@@ -1,8 +1,8 @@
 package com.junnio.polym.screen;
 
 import com.junnio.polym.Polym;
-import com.junnio.polym.net.AllShopOpenData;
-import com.junnio.polym.net.ShopOpenData;
+import com.junnio.polym.net.shop.AllShopOpenData;
+import com.junnio.polym.net.seller.SellerOfferData;
 import net.fabricmc.fabric.api.screenhandler.v1.ExtendedScreenHandlerType;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -21,10 +21,10 @@ public class ModScreenHandlers{
                     (syncId, inventory, data) -> new ShopScreenHandler(syncId, inventory, inventory.player, data),
                     AllShopOpenData.CODEC
             );
-    public static final ExtendedScreenHandlerType<SellerScreenHandler, ShopOpenData> SELLER_SCREEN_HANDLER =
+    public static final ExtendedScreenHandlerType<SellerScreenHandler, SellerOfferData> SELLER_SCREEN_HANDLER =
             new ExtendedScreenHandlerType<>(
                     (syncId, inventory, data) -> new SellerScreenHandler(syncId, inventory, inventory.player, data),
-                    ShopOpenData.CODEC
+                    SellerOfferData.CODEC
             );
     public static void initialize() {
         Registry.register(BuiltInRegistries.MENU, Identifier.fromNamespaceAndPath(Polym.MOD_ID, "polym_table"), POLYM_TABLE_SCREEN_HANDLER);

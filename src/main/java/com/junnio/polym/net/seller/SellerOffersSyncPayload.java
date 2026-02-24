@@ -1,7 +1,7 @@
 package com.junnio.polym.net.seller;
 
 import com.junnio.polym.Polym;
-import com.junnio.polym.net.ShopOfferData;
+import com.junnio.polym.net.shop.ShopOfferData;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;

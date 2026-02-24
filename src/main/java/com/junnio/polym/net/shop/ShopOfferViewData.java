@@ -1,4 +1,4 @@
-package com.junnio.polym.net;
+package com.junnio.polym.net.shop;
 
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;

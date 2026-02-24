@@ -1,6 +1,6 @@
 package com.junnio.polymclient.screen;
 
-import com.junnio.polym.net.ShopOfferViewData;
+import com.junnio.polym.net.shop.ShopOfferViewData;
 import com.junnio.polym.screen.ShopScreenHandler;
 import com.mojang.blaze3d.platform.cursor.CursorTypes;
 import net.fabricmc.api.EnvType;

@@ -2,6 +2,10 @@ package com.junnio.polym.net;
 
 import com.junnio.polym.Polym;
 import com.junnio.polym.net.seller.*;
+import com.junnio.polym.net.shop.AllShopOpenData;
+import com.junnio.polym.net.shop.OpenAllShopsPayload;
+import com.junnio.polym.net.shop.ShopOfferData;
+import com.junnio.polym.net.shop.ShopOfferViewData;
 import com.junnio.polym.screen.SellerScreenHandler;
 import com.junnio.polym.screen.ShopScreenHandler;
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
@@ -24,7 +28,6 @@ public class ModNetwork {
     public static void initialize() {
         PayloadTypeRegistry.playC2S().register(AddOfferFromSlotsPayload.TYPE, AddOfferFromSlotsPayload.CODEC);
         PayloadTypeRegistry.playS2C().register(SellerOffersSyncPayload.TYPE, SellerOffersSyncPayload.CODEC);
-// CHỈ GIỮ 1 receiver
         ServerPlayNetworking.registerGlobalReceiver(AddOfferFromSlotsPayload.TYPE, (payload, context) -> {
             context.server().execute(() -> {
                 ServerPlayer player = context.player();
@@ -43,7 +46,7 @@ public class ModNetwork {
                 if (!(player.containerMenu instanceof SellerScreenHandler sh)) return;
 
                 List<ShopOfferData> safe = sh.getOffers().stream()
-                        .limit(300)
+                        .limit(1000000)
                         .map(o -> new ShopOfferData(
                                 o.buyA() == null ? ItemStack.EMPTY : o.buyA(),
                                 o.buyB() == null ? ItemStack.EMPTY : o.buyB(),
@@ -67,9 +70,9 @@ public class ModNetwork {
                 SellerShopJsonStore store = SellerShopJsonStore.get(context.server());
                 List<ShopOfferData> offers = store.getOffers(owner);
 
-                ShopOpenData openData = new ShopOpenData(offers);
-                player.openMenu(new ExtendedScreenHandlerFactory<ShopOpenData>() {
-                    @Override public ShopOpenData getScreenOpeningData(ServerPlayer p) { return openData; }
+                SellerOfferData openData = new SellerOfferData(offers);
+                player.openMenu(new ExtendedScreenHandlerFactory<SellerOfferData>() {
+                    @Override public SellerOfferData getScreenOpeningData(ServerPlayer p) { return openData; }
                     @Override public AbstractContainerMenu createMenu(int syncId, Inventory inv, Player p) {
                         return new SellerScreenHandler(syncId, inv, p, openData);
                     }

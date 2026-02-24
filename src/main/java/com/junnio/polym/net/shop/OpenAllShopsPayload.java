@@ -1,4 +1,4 @@
-package com.junnio.polym.net;
+package com.junnio.polym.net.shop;
 
 import com.junnio.polym.Polym;
 import net.minecraft.network.RegistryFriendlyByteBuf;

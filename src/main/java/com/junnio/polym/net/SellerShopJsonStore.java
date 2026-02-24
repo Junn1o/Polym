@@ -2,6 +2,8 @@ package com.junnio.polym.net;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.junnio.polym.net.shop.ShopOfferData;
+import com.junnio.polym.net.shop.ShopOfferViewData;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.Identifier;
