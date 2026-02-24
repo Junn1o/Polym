@@ -11,9 +11,9 @@ import net.minecraft.world.item.Rarity;
 import org.spongepowered.include.com.google.common.base.Function;
 
 public class ModItems {
-    public static Item register(String name, Function<Item.Properties, Item> itemFactory, Item.Properties settings) {
+    public static <T extends Item> T register(String name, Function<Item.Properties, T> itemFactory, Item.Properties settings) {
         ResourceKey<Item> itemKey = ResourceKey.create(Registries.ITEM, Identifier.fromNamespaceAndPath(Polym.MOD_ID, name));
-        Item item = itemFactory.apply(settings.setId(itemKey));
+        T item = itemFactory.apply(settings.setId(itemKey));
         Registry.register(BuiltInRegistries.ITEM, itemKey, item);
         return item;
     }
