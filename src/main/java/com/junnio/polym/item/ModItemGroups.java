@@ -39,6 +39,9 @@ public class ModItemGroups {
                     entries.accept(ModItems.GOLD_COIN);
                     entries.accept(ModItems.GOLD_COIN_PILE);
                     entries.accept(ModItems.GOLD_BIG_COIN);
+                    entries.accept(ModItems.DIAMOND_COIN);
+                    entries.accept(ModItems.DIAMOND_COIN_PILE);
+                    entries.accept(ModItems.DIAMOND_BIG_COIN);
                     entries.accept(ModBlocks.POLYM_TABLE);
                 });
     }

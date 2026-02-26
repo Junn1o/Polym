@@ -12,7 +12,10 @@ public final class ItemGlow {
                 || stack.is(ModItems.SILVER_BIG_COIN)
                 || stack.is(ModItems.GOLD_COIN)
                 || stack.is(ModItems.GOLD_COIN_PILE)
-                || stack.is(ModItems.GOLD_BIG_COIN);
+                || stack.is(ModItems.GOLD_BIG_COIN)
+                || stack.is(ModItems.DIAMOND_COIN)
+                || stack.is(ModItems.DIAMOND_COIN_PILE)
+                || stack.is(ModItems.DIAMOND_BIG_COIN);
     }
 }
 
