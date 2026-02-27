@@ -19,18 +19,20 @@ public class ShopScreenHandler extends AbstractContainerMenu {
     public List<ShopOfferViewData> getOffers() {
         return List.copyOf(offers);
     }
-
+    private final Container offerInv = new SimpleContainer(5);
     public static final int SLOT_BUY_A = 0;
     public static final int SLOT_BUY_B = 1;
-    public static final int SLOT_SELL  = 2;
+    public static final int SLOT_BUY_C = 2;
+    public static final int SLOT_SELL  = 3;
+    public static final int SLOT_SELL_B  = 4;
     public ShopScreenHandler(int syncId, Inventory playerInventory, Player player, AllShopOpenData data) {
         super(ModScreenHandlers.SHOP_SCREEN_HANDLER, syncId);
-        Level world = playerInventory.player.level();
         this.offers = new ArrayList<>(data.offers());
-        Container offerInv = new SimpleContainer(3);
-        this.addSlot(new Slot(offerInv, SLOT_BUY_A,  /*x*/ 136, /*y*/ 37));
-        this.addSlot(new Slot(offerInv, SLOT_BUY_B,  /*x*/ 162, /*y*/ 37));
-        this.addSlot(new Slot(offerInv, SLOT_SELL,   /*x*/ 220, /*y*/ 37));
+        this.addSlot(new Slot(offerInv, SLOT_BUY_A,  110, 37));
+        this.addSlot(new Slot(offerInv, SLOT_BUY_B,  136, 37));
+        this.addSlot(new Slot(offerInv, SLOT_BUY_C,  162, 37));
+        this.addSlot(new Slot(offerInv, SLOT_SELL,   220, 37));
+        this.addSlot(new Slot(offerInv, SLOT_SELL_B,   220, 60));
         this.addStandardInventorySlots(playerInventory, 108, 84);
     }
 

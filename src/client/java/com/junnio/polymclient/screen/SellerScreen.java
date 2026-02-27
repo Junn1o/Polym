@@ -53,10 +53,12 @@ public class SellerScreen extends AbstractContainerScreen<SellerScreenHandler> {
     private static final int ROW_W = 88;
     private static final int ITEM_Y_OFF = 2;
 
-    private static final int ITEM_X0 = 11; // 6+5
-    private static final int BUY_B_DX = 18;
-    private static final int SELL_DX = 18 + 18 + 24;
-    private static final float ITEM_SCALE = 0.75f;
+    private static final int ITEM_X0 = 8;
+    private static final int BUY_B_DX = 13;
+    private static final int BUY_C_DX = 26;
+    private static final int SELL_DX = 18 + 16 + 22;
+    private static final int SELL_DX_B = 18 + 16 + 35;
+    private static final float ITEM_SCALE = 0.5f;
     private static final float ITEM_OFF = (16f - 16f * ITEM_SCALE) / 2f;
     public SellerScreen(SellerScreenHandler handler, Inventory inv, Component title) {
         super(handler, inv, title);
@@ -153,7 +155,7 @@ public class SellerScreen extends AbstractContainerScreen<SellerScreenHandler> {
         boolean locked = (this.mode != ActionMode.NORMAL);
 
         this.addBtn.setMessage(Component.literal(this.mode == ActionMode.ADDING ? "Adding" : "Add"));
-        this.editBtn.setMessage(Component.literal(this.mode == ActionMode.EDITING ? "Editting" : "Edit"));
+        this.editBtn.setMessage(Component.literal(this.mode == ActionMode.EDITING ? "Editing" : "Edit"));
         this.cancelBtn.visible = locked;
         this.cancelBtn.active = locked;
         this.saveBtn.visible = true;
@@ -206,7 +208,9 @@ public class SellerScreen extends AbstractContainerScreen<SellerScreenHandler> {
 
             int xBuyA = left + ITEM_X0;
             int xBuyB = xBuyA + BUY_B_DX;
+            int xBuyC = xBuyA + BUY_C_DX;
             int xSell = xBuyA + SELL_DX;
+            int xSellB = xBuyA + SELL_DX_B;
             if (idx == this.selected) {
                 g.fill(rowX, yRow - 1, rowX + ROW_W, yRow - 1 + ROW_H, 0x66FFFFFF);
             }
@@ -216,24 +220,36 @@ public class SellerScreen extends AbstractContainerScreen<SellerScreenHandler> {
             if (!o.buyB().isEmpty()) {
                 renderScaledFakeItem(g, o.buyB(), xBuyB, yItem, ITEM_SCALE, ITEM_OFF);
             }
+            if (!o.buyC().isEmpty()) {
+                renderScaledFakeItem(g, o.buyC(), xBuyC, yItem, ITEM_SCALE, ITEM_OFF);
+            }
             renderScaledFakeItem(g, o.sell(), xSell, yItem, ITEM_SCALE, ITEM_OFF);
+            if (!o.sellB().isEmpty()) {
+                renderScaledFakeItem(g, o.sellB(), xSellB, yItem, ITEM_SCALE, ITEM_OFF);
+            }
             this.renderButtonArrows(g, this.leftPos, yRow +2);
         }
         this.renderScroller(g, mouseX, mouseY);
         if (this.previewOffer != null) {
             ItemStack realA = this.menu.getSlot(SellerScreenHandler.SLOT_BUY_A).getItem();
             ItemStack realB = this.menu.getSlot(SellerScreenHandler.SLOT_BUY_B).getItem();
+            ItemStack realC = this.menu.getSlot(SellerScreenHandler.SLOT_BUY_C).getItem();
             ItemStack realS = this.menu.getSlot(SellerScreenHandler.SLOT_SELL).getItem();
+            ItemStack realSB = this.menu.getSlot(SellerScreenHandler.SLOT_SELL_B).getItem();
 
             boolean emptyA = realA.isEmpty();
             boolean emptyB = realB.isEmpty();
+            boolean emptyC = realC.isEmpty();
             boolean emptyS = realS.isEmpty();
-            int px = this.leftPos + 136;
+            boolean emptySB = realSB.isEmpty();
+            int px = this.leftPos + 110;
             int py = this.topPos + 37;
 
             ItemStack a = previewOffer.buyA();
             ItemStack b = previewOffer.buyB();
+            ItemStack c = previewOffer.buyC();
             ItemStack s = previewOffer.sell();
+            ItemStack sb = previewOffer.sellB();
 
             if (emptyA) {
                 g.renderFakeItem(a, px, py);
@@ -243,10 +259,17 @@ public class SellerScreen extends AbstractContainerScreen<SellerScreenHandler> {
                 g.renderFakeItem(b, px + 26, py);
                 g.renderItemDecorations(this.font, b, px + 26, py);
             }
+            if (emptyC && !c.isEmpty()) {
+                g.renderFakeItem(c, px + 26 + 26, py);
+                g.renderItemDecorations(this.font, c, px + 26 + 26, py);
+            }
             if (emptyS) {
-                System.out.println("It is working");
-                g.renderFakeItem(s, px + 26 + 58, py);
-                g.renderItemDecorations(this.font, s, px + 26 + 58, py);
+                g.renderFakeItem(s, px + 26 + 26 + 58, py);
+                g.renderItemDecorations(this.font, s, px + 26 + 26 + 58, py);
+            }
+            if (emptySB && !sb.isEmpty()) {
+                g.renderFakeItem(sb, px + 26 + 26 + 58, py + 23);
+                g.renderItemDecorations(this.font, sb, px + 26 + 26 + 58, py + 23);
             }
         }
         this.renderTooltip(g, mouseX, mouseY);
@@ -265,8 +288,7 @@ public class SellerScreen extends AbstractContainerScreen<SellerScreenHandler> {
         m.popMatrix();
     }
     private void renderButtonArrows(GuiGraphics guiGraphics, int baseX, int rowY) {
-        guiGraphics.blitSprite(RenderPipelines.GUI_TEXTURED, TRADE_ARROW_SPRITE, baseX + 5 + 35 + 20, rowY + 3, 10, 9);
-
+        guiGraphics.blitSprite(RenderPipelines.GUI_TEXTURED, TRADE_ARROW_SPRITE, baseX + 5 + 30 + 20, rowY + 3, 10, 9);
     }
     private void renderScroller(GuiGraphics g, int mouseX, int mouseY) {
         int sx = this.leftPos + SCROLL_X;
@@ -320,9 +342,9 @@ public class SellerScreen extends AbstractContainerScreen<SellerScreenHandler> {
     public boolean mouseDragged(MouseButtonEvent mouseButtonEvent, double d, double e) {
         if (this.draggingScroller && canScroll()) {
             int i = this.offersView.size();
-            int j = this.topPos + SCROLL_Y;      // top + 18
-            int k = j + TRACK_H;                 // +139
-            int l = i - 7;                       // maxScroll
+            int j = this.topPos + SCROLL_Y;
+            int k = j + TRACK_H;
+            int l = i - 7;
 
             float f = ((float)mouseButtonEvent.y() - (float)j - (KNOB_H / 2.0f)) / ((float)(k - j) - (float)KNOB_H);
             f = f * (float)l + 0.5f;

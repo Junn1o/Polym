@@ -50,7 +50,9 @@ public class ModNetwork {
                         .map(o -> new ShopOfferData(
                                 o.buyA() == null ? ItemStack.EMPTY : o.buyA(),
                                 o.buyB() == null ? ItemStack.EMPTY : o.buyB(),
-                                o.sell() == null ? ItemStack.EMPTY : o.sell()
+                                o.buyC() == null ? ItemStack.EMPTY : o.buyC(),
+                                o.sell() == null ? ItemStack.EMPTY : o.sell(),
+                                o.sellB() == null ? ItemStack.EMPTY : o.sellB()
                         ))
                         .toList();
 

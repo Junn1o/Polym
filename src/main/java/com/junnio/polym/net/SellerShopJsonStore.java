@@ -37,7 +37,7 @@ public final class SellerShopJsonStore {
     }
 
     private Path filePath() {
-        Path worldRoot = server.getWorldPath(LevelResource.ROOT); // nếu mapping khác, IDE sẽ gợi ý tương đương
+        Path worldRoot = server.getWorldPath(LevelResource.ROOT);
         return worldRoot.resolve("polym").resolve("seller_shops.json");
     }
 
@@ -103,7 +103,9 @@ public final class SellerShopJsonStore {
                 OfferJson oj = new OfferJson();
                 oj.buyA = encodeStack(o.buyA());
                 oj.buyB = encodeStack(o.buyB());
+                oj.buyC = encodeStack(o.buyC());
                 oj.sell = encodeStack(o.sell());
+                oj.sellB = encodeStack(o.sellB());
                 sj.offers.add(oj);
             }
 
@@ -146,18 +148,12 @@ public final class SellerShopJsonStore {
 
             ItemStack buyA = decodeStack(oj.buyA);
             ItemStack buyB = decodeStack(oj.buyB);
+            ItemStack buyC = decodeStack(oj.buyC);
             ItemStack sell = decodeStack(oj.sell);
-
+            ItemStack sellB = decodeStack(oj.sellB);
             if (buyA.isEmpty() || sell.isEmpty()) continue;
 
-            out.add(new ShopOfferData(buyA, buyB, sell));
-        }
-        return out;
-    }
-    public List<ShopOfferData> getAllOffers() {
-        List<ShopOfferData> out = new ArrayList<>();
-        for (ShopEntry e : shops.values()) {
-            out.addAll(e.offers());
+            out.add(new ShopOfferData(buyA, buyB, buyC, sell, sellB));
         }
         return out;
     }
@@ -177,7 +173,7 @@ public final class SellerShopJsonStore {
     }
     private static final class RootJson { Map<String, ShopJson> shops; }
     private static final class ShopJson { String name; List<OfferJson> offers; }
-    private static final class OfferJson { StackJson buyA, buyB, sell; }
+    private static final class OfferJson { StackJson buyA, buyB, buyC, sell, sellB; }
     private static final class StackJson { String item; int count; }
     private record ShopEntry(String name, List<ShopOfferData> offers) {}
 }

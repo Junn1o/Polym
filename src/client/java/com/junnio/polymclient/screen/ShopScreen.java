@@ -1,6 +1,7 @@
 package com.junnio.polymclient.screen;
 
 import com.junnio.polym.net.shop.ShopOfferViewData;
+import com.junnio.polym.screen.SellerScreenHandler;
 import com.junnio.polym.screen.ShopScreenHandler;
 import com.mojang.blaze3d.platform.cursor.CursorTypes;
 import net.fabricmc.api.EnvType;
@@ -52,10 +53,12 @@ public class ShopScreen extends AbstractContainerScreen<ShopScreenHandler> {
     private static final int ROW_W = 88;
     private static final int ITEM_Y_OFF = 2;
 
-    private static final int ITEM_X0 = 11;
-    private static final int BUY_B_DX = 18;
-    private static final int SELL_DX = 18 + 18 + 24;
-    private static final float ITEM_SCALE = 0.75f;
+    private static final int ITEM_X0 = 8;
+    private static final int BUY_B_DX = 13;
+    private static final int BUY_C_DX = 26;
+    private static final int SELL_DX = 18 + 16 + 22;
+    private static final int SELL_DX_B = 18 + 16 + 35;
+    private static final float ITEM_SCALE = 0.5f;
     private static final float ITEM_OFF = (16f - 16f * ITEM_SCALE) / 2f;
     private final List<ShopOfferViewData> offersView = new ArrayList<>();
     private EditBox searchBox;
@@ -175,7 +178,9 @@ public class ShopScreen extends AbstractContainerScreen<ShopScreenHandler> {
 
             int xBuyA = left + ITEM_X0;
             int xBuyB = xBuyA + BUY_B_DX;
+            int xBuyC = xBuyA + BUY_C_DX;
             int xSell = xBuyA + SELL_DX;
+            int xSellB = xBuyA + SELL_DX_B;
             if (idx == this.selected) {
                 g.fill(rowX, yRow - 1, rowX + ROW_W, yRow - 1 + ROW_H, 0x66FFFFFF);
             }
@@ -186,24 +191,36 @@ public class ShopScreen extends AbstractContainerScreen<ShopScreenHandler> {
             if (!o.buyB().isEmpty()) {
                 renderScaledFakeItem(g, o.buyB(), xBuyB, yItem, ITEM_SCALE, ITEM_OFF);
             }
+            if (!o.buyC().isEmpty()) {
+                renderScaledFakeItem(g, o.buyC(), xBuyC, yItem, ITEM_SCALE, ITEM_OFF);
+            }
             renderScaledFakeItem(g, o.sell(), xSell, yItem, ITEM_SCALE, ITEM_OFF);
+            if (!o.sellB().isEmpty()) {
+                renderScaledFakeItem(g, o.sellB(), xSellB, yItem, ITEM_SCALE, ITEM_OFF);
+            }
             this.renderButtonArrows(g, this.leftPos, yRow +2);
         }
         this.renderScroller(g, mouseX, mouseY);
         if (this.previewOffer != null) {
-            ItemStack realA = this.menu.getSlot(ShopScreenHandler.SLOT_BUY_A).getItem();
-            ItemStack realB = this.menu.getSlot(ShopScreenHandler.SLOT_BUY_B).getItem();
-            ItemStack realS = this.menu.getSlot(ShopScreenHandler.SLOT_SELL).getItem();
+            ItemStack realA = this.menu.getSlot(SellerScreenHandler.SLOT_BUY_A).getItem();
+            ItemStack realB = this.menu.getSlot(SellerScreenHandler.SLOT_BUY_B).getItem();
+            ItemStack realC = this.menu.getSlot(SellerScreenHandler.SLOT_BUY_C).getItem();
+            ItemStack realS = this.menu.getSlot(SellerScreenHandler.SLOT_SELL).getItem();
+            ItemStack realSB = this.menu.getSlot(SellerScreenHandler.SLOT_SELL_B).getItem();
 
             boolean emptyA = realA.isEmpty();
             boolean emptyB = realB.isEmpty();
+            boolean emptyC = realC.isEmpty();
             boolean emptyS = realS.isEmpty();
-            int px = this.leftPos + 136;
+            boolean emptySB = realSB.isEmpty();
+            int px = this.leftPos + 110;
             int py = this.topPos + 37;
 
             ItemStack a = previewOffer.offer().buyA();
             ItemStack b = previewOffer.offer().buyB();
+            ItemStack c = previewOffer.offer().buyC();
             ItemStack s = previewOffer.offer().sell();
+            ItemStack sb = previewOffer.offer().sellB();
 
             if (emptyA) {
                 g.renderFakeItem(a, px, py);
@@ -213,9 +230,17 @@ public class ShopScreen extends AbstractContainerScreen<ShopScreenHandler> {
                 g.renderFakeItem(b, px + 26, py);
                 g.renderItemDecorations(this.font, b, px + 26, py);
             }
+            if (emptyC && !c.isEmpty()) {
+                g.renderFakeItem(c, px + 26 + 26, py);
+                g.renderItemDecorations(this.font, c, px + 26 + 26, py);
+            }
             if (emptyS) {
-                g.renderFakeItem(s, px + 26 + 58, py);
-                g.renderItemDecorations(this.font, s, px + 26 + 58, py);
+                g.renderFakeItem(s, px + 26 + 26 + 58, py);
+                g.renderItemDecorations(this.font, s, px + 26 + 26 + 58, py);
+            }
+            if (emptySB && !sb.isEmpty()) {
+                g.renderFakeItem(sb, px + 26 + 26 + 58, py + 23);
+                g.renderItemDecorations(this.font, sb, px + 26 + 26 + 58, py + 23);
             }
             int hx = this.leftPos + this.imageWidth - 16 - 6;
             int hy = this.topPos + 6;
@@ -323,7 +348,7 @@ public class ShopScreen extends AbstractContainerScreen<ShopScreenHandler> {
         m.popMatrix();
     }
     private void renderButtonArrows(GuiGraphics guiGraphics, int baseX, int rowY) {
-        guiGraphics.blitSprite(RenderPipelines.GUI_TEXTURED, TRADE_ARROW_SPRITE, baseX + 5 + 35 + 20, rowY + 3, 10, 9);
+        guiGraphics.blitSprite(RenderPipelines.GUI_TEXTURED, TRADE_ARROW_SPRITE, baseX + 5 + 30 + 20, rowY + 3, 10, 9);
     }
     private void renderScroller(GuiGraphics g, int mouseX, int mouseY) {
         int sx = this.leftPos + SCROLL_X;
