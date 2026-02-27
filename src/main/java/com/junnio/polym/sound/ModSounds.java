@@ -1,26 +1,26 @@
 package com.junnio.polym.sound;
 
 import com.junnio.polym.Polym;
-import net.minecraft.registry.Registries;
-import net.minecraft.registry.Registry;
-import net.minecraft.sound.BlockSoundGroup;
-import net.minecraft.sound.SoundEvent;
-import net.minecraft.sound.SoundEvents;
-import net.minecraft.util.Identifier;
+import net.minecraft.core.Registry;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.Identifier;
+import net.minecraft.sounds.SoundEvent;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.world.level.block.SoundType;
 
 public class ModSounds {
 
     public static final SoundEvent POLYM_ON_CRAFT = register("kaching");
-    public static final BlockSoundGroup POLYM_TABLE_SOUND_GROUP = new BlockSoundGroup(
+    public static final SoundType POLYM_TABLE_SOUND_GROUP = new SoundType(
             1.0F, 1.0F,
-            SoundEvents.BLOCK_NETHERITE_BLOCK_BREAK,
-            SoundEvents.BLOCK_AMETHYST_BLOCK_STEP,
-            SoundEvents.BLOCK_NETHERITE_BLOCK_PLACE,
-            SoundEvents.BLOCK_AMETHYST_BLOCK_HIT,
-            SoundEvents.BLOCK_AMETHYST_BLOCK_FALL);
+            SoundEvents.NETHERITE_BLOCK_BREAK,
+            SoundEvents.AMETHYST_BLOCK_STEP,
+            SoundEvents.NETHERITE_BLOCK_PLACE,
+            SoundEvents.AMETHYST_BLOCK_HIT,
+            SoundEvents.AMETHYST_BLOCK_FALL);
     private static SoundEvent register(String name) {
-        Identifier id = Identifier.of(Polym.MOD_ID, name);
-        return Registry.register(Registries.SOUND_EVENT, id, SoundEvent.of(id));
+        Identifier id = Identifier.fromNamespaceAndPath(Polym.MOD_ID, name);
+        return Registry.register(BuiltInRegistries.SOUND_EVENT, id, SoundEvent.createVariableRangeEvent(id));
     }
     public static void initialize(){
 

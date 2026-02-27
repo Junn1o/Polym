@@ -1,50 +1,50 @@
 package com.junnio.polym.block;
 import com.junnio.polym.screen.PolymTableScreenHandler;
-import net.minecraft.block.Block;
-import net.minecraft.block.BlockRenderType;
-import net.minecraft.block.BlockState;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.entity.player.PlayerInventory;
-import net.minecraft.screen.NamedScreenHandlerFactory;
-import net.minecraft.screen.ScreenHandler;
-import net.minecraft.text.Text;
-import net.minecraft.util.ActionResult;
-import net.minecraft.util.hit.BlockHitResult;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.World;
+import net.minecraft.core.BlockPos;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.MenuProvider;
+import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.RenderShape;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.BlockHitResult;
 
 public class PolymTableBlock extends Block {
-    private static final Text TITLE = Text.translatable("container.polym_table");
+    private static final Component TITLE = Component.translatable("container.polym_table");
 
-    public PolymTableBlock(Settings settings) {
+    public PolymTableBlock(Properties settings) {
         super(settings);
     }
 
     @Override
-    protected ActionResult onUse(BlockState state, World world, BlockPos pos, PlayerEntity player, BlockHitResult hit) {
-        if (!world.isClient()) {
-            player.openHandledScreen(new NamedScreenHandlerFactory() {
+    protected InteractionResult useWithoutItem(BlockState state, Level world, BlockPos pos, Player player, BlockHitResult hit) {
+        if (!world.isClientSide()) {
+            player.openMenu(new MenuProvider() {
                 @Override
-                public ScreenHandler createMenu(int syncId, PlayerInventory inv, PlayerEntity player) {
+                public AbstractContainerMenu createMenu(int syncId, Inventory inv, Player player) {
                     return new PolymTableScreenHandler(syncId, inv, player);
                 }
 
                 @Override
-                public Text getDisplayName() {
+                public Component getDisplayName() {
                     return TITLE;
                 }
             });
         }
-        return ActionResult.SUCCESS;
+        return InteractionResult.SUCCESS;
     }
 
     @Override
-    protected BlockRenderType getRenderType(BlockState state) {
-        return BlockRenderType.MODEL;
+    protected RenderShape getRenderShape(BlockState state) {
+        return RenderShape.MODEL;
     }
 
     @Override
-    protected boolean isTransparent(BlockState state) {
+    protected boolean propagatesSkylightDown(BlockState state) {
         return true;
     }
 }

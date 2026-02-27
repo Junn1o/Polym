@@ -2,43 +2,43 @@ package com.junnio.polym.block;
 
 import com.junnio.polym.Polym;
 import com.junnio.polym.sound.ModSounds;
-import net.minecraft.block.AbstractBlock;
-import net.minecraft.block.Block;
-import net.minecraft.item.BlockItem;
-import net.minecraft.item.Item;
-import net.minecraft.registry.Registries;
-import net.minecraft.registry.Registry;
-import net.minecraft.registry.RegistryKey;
-import net.minecraft.registry.RegistryKeys;
-import net.minecraft.util.Identifier;
-import net.minecraft.util.Rarity;
+import net.minecraft.core.Registry;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.world.item.BlockItem;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.Rarity;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.state.BlockBehaviour;
 import org.spongepowered.include.com.google.common.base.Function;
 
 public class ModBlocks {
 
-    public static Block register(String name, Function<Block.Settings, Block> blockFactory, Block.Settings settings, Item.Settings itemSettings) {
-        RegistryKey<Block> blockKey = RegistryKey.of(RegistryKeys.BLOCK, Identifier.of(Polym.MOD_ID, name));
-        Block block = blockFactory.apply(settings.registryKey(blockKey));
-        Registry.register(Registries.BLOCK, blockKey, block);
+    public static Block register(String name, Function<BlockBehaviour.Properties, Block> blockFactory, Block.Properties settings, Item.Properties itemSettings) {
+        ResourceKey<Block> blockKey = ResourceKey.create(Registries.BLOCK, Identifier.fromNamespaceAndPath(Polym.MOD_ID, name));
+        Block block = blockFactory.apply(settings.setId(blockKey));
+        Registry.register(BuiltInRegistries.BLOCK, blockKey, block);
 
-        RegistryKey<Item> itemKey = RegistryKey.of(RegistryKeys.ITEM, Identifier.of(Polym.MOD_ID, name));
-        BlockItem blockItem = new BlockItem(block, itemSettings.registryKey(itemKey));
-        Registry.register(Registries.ITEM, itemKey, blockItem);
+        ResourceKey<Item> itemKey = ResourceKey.create(Registries.ITEM, Identifier.fromNamespaceAndPath(Polym.MOD_ID, name));
+        BlockItem blockItem = new BlockItem(block, itemSettings.setId(itemKey));
+        Registry.register(BuiltInRegistries.ITEM, itemKey, blockItem);
 
         return block;
     }
     public static final Block POLYM_TABLE = ModBlocks.register(
             "polym_table",
             PolymTableBlock::new,
-            AbstractBlock.Settings.create()
-                    .sounds(ModSounds.POLYM_TABLE_SOUND_GROUP)
+            BlockBehaviour.Properties.of()
+                    .sound(ModSounds.POLYM_TABLE_SOUND_GROUP)
                     .strength(50.0F,1200.0F)
-                    .requiresTool()
-                    .luminance((state) ->4)
-                    .solidBlock((state, world, pos) -> true)
-                    .suffocates((state, world, pos) -> true)
-                    .blockVision((state, world, pos) -> true)
-            ,new Item.Settings().rarity(Rarity.RARE)
+                    .requiresCorrectToolForDrops()
+                    .lightLevel((state) ->4)
+                    .isRedstoneConductor((state, world, pos) -> true)
+                    .isSuffocating((state, world, pos) -> true)
+                    .isViewBlocking((state, world, pos) -> true)
+            ,new Item.Properties().rarity(Rarity.RARE)
     );
     public static void initialize() {
     }
