@@ -290,15 +290,10 @@ public class ShopScreen extends AbstractContainerScreen<ShopScreenHandler> {
     private void renderSearchIcon(GuiGraphics guiGraphics, int baseX, int rowY) {
         guiGraphics.blitSprite(RenderPipelines.GUI_TEXTURED, SEARCH_SPRITE, baseX, rowY, 12, 12);
     }
-    public void setOffersFromServer(List<ShopOfferViewData> offers) {
-        allOffers.clear();
-        allOffers.addAll(offers);
-        applyFilter(this.searchBox != null ? this.searchBox.getValue() : "");
-    }
     private static String fold(String s) {
         if (s == null) return "";
         String n = Normalizer.normalize(s, Normalizer.Form.NFD);
-        n = n.replaceAll("\\p{M}+", ""); // bỏ dấu
+        n = n.replaceAll("\\p{M}+", "");
         n = n.replace('đ', 'd').replace('Đ', 'D');
         return n.toLowerCase();
     }
@@ -315,17 +310,9 @@ public class ShopScreen extends AbstractContainerScreen<ShopScreenHandler> {
         offersView.clear();
 
         for (ShopOfferViewData view : allOffers) {
-            ItemStack sell = view.offer().sell();
-            if (sell == null || sell.isEmpty()) continue;
-            String id = "";
-            var key = net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(sell.getItem());
-            if (key != null) id = key.toString();
-            String name = sell.getHoverName().getString();
+            var offer = view.offer();
 
-            String hay1 = fold(id);
-            String hay2 = fold(name);
-
-            boolean ok = hay1.contains(q) || hay2.contains(q);
+            boolean ok = matchesStack(offer.sell(), q) || matchesStack(offer.sellB(), q);
             if (ok) offersView.add(view);
         }
         this.scrollOff = 0;
@@ -333,6 +320,16 @@ public class ShopScreen extends AbstractContainerScreen<ShopScreenHandler> {
         this.previewOffer = offersView.isEmpty() ? null : offersView.get(0);
 
         updateOfferButtons();
+    }
+    private boolean matchesStack(ItemStack stack, String q) {
+        if (stack == null || stack.isEmpty()) return false;
+
+        String id = "";
+        var key = net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(stack.getItem());
+        if (key != null) id = key.toString();
+
+        String name = stack.getHoverName().getString();
+        return fold(id).contains(q) || fold(name).contains(q);
     }
     private void renderScaledFakeItem(GuiGraphics g, ItemStack stack, int x, int y, float scale, float itemoff) {
         if (stack.isEmpty()) return;
