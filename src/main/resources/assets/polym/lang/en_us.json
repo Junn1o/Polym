@@ -8,7 +8,12 @@
   "item.polym.gold_coin": "10000 Polym",
   "item.polym.gold_coin_pile": "50000 Polym",
   "item.polym.gold_big_coin": "200000 Polym",
+  "item.polym.diamond_coin" : "Angle Coin",
+  "item.polym.diamond_coin_pile" : "Devil Coin",
+  "item.polym.diamond_big_coin" : "God Coin",
   "item.polym.polym_table": "Polym Table",
   "itemGroup.polymgroup": "Polym",
-  "container.polym_table": "Polym Crafting"
+  "container.polym_table": "Polym Crafting",
+  "container.shop" : "Shop",
+  "container.seller" : "Sell"
 }

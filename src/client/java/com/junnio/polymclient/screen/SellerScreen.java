@@ -10,18 +10,26 @@ import com.mojang.blaze3d.platform.cursor.CursorTypes;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import net.minecraft.client.gui.screens.inventory.tooltip.ClientTextTooltip;
+import net.minecraft.client.gui.screens.inventory.tooltip.ClientTooltipComponent;
+import net.minecraft.client.gui.screens.inventory.tooltip.ClientTooltipPositioner;
+import net.minecraft.client.gui.screens.inventory.tooltip.DefaultTooltipPositioner;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
+import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.Nullable;
+import org.joml.Vector2i;
+import org.joml.Vector2ic;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -60,6 +68,7 @@ public class SellerScreen extends AbstractContainerScreen<SellerScreenHandler> {
     private static final int SELL_DX_B = 18 + 16 + 35;
     private static final float ITEM_SCALE = 0.5f;
     private static final float ITEM_OFF = (16f - 16f * ITEM_SCALE) / 2f;
+    @Nullable private ItemStack previewTooltipStack = null;
     public SellerScreen(SellerScreenHandler handler, Inventory inv, Component title) {
         super(handler, inv, title);
         this.imageWidth = 276;
@@ -231,6 +240,7 @@ public class SellerScreen extends AbstractContainerScreen<SellerScreenHandler> {
         }
         this.renderScroller(g, mouseX, mouseY);
         if (this.previewOffer != null) {
+            this.previewTooltipStack = null;
             ItemStack realA = this.menu.getSlot(SellerScreenHandler.SLOT_BUY_A).getItem();
             ItemStack realB = this.menu.getSlot(SellerScreenHandler.SLOT_BUY_B).getItem();
             ItemStack realC = this.menu.getSlot(SellerScreenHandler.SLOT_BUY_C).getItem();
@@ -244,35 +254,87 @@ public class SellerScreen extends AbstractContainerScreen<SellerScreenHandler> {
             boolean emptySB = realSB.isEmpty();
             int px = this.leftPos + 110;
             int py = this.topPos + 37;
-
+            int bx = px + 26;
             ItemStack a = previewOffer.buyA();
             ItemStack b = previewOffer.buyB();
             ItemStack c = previewOffer.buyC();
             ItemStack s = previewOffer.sell();
             ItemStack sb = previewOffer.sellB();
-
             if (emptyA) {
+                if (mouseX >= bx - 26 && mouseX < bx - 26 + 16 && mouseY >= py && mouseY < py + 16) {
+                    this.previewTooltipStack = a;
+                }
                 g.renderFakeItem(a, px, py);
                 g.renderItemDecorations(this.font, a, px, py);
             }
             if (emptyB && !b.isEmpty()) {
+                if (mouseX >= bx && mouseX < bx + 16 && mouseY >= py && mouseY < py + 16) {
+                    this.previewTooltipStack = b;
+                }
                 g.renderFakeItem(b, px + 26, py);
                 g.renderItemDecorations(this.font, b, px + 26, py);
             }
             if (emptyC && !c.isEmpty()) {
+                if (mouseX >= bx + 26 && mouseX < bx + 26 + 16 && mouseY >= py && mouseY < py + 16) {
+                    this.previewTooltipStack = c;
+                }
                 g.renderFakeItem(c, px + 26 + 26, py);
                 g.renderItemDecorations(this.font, c, px + 26 + 26, py);
             }
             if (emptyS) {
+                if (mouseX >= bx + 26 + 58 && mouseX < bx + 26 + 58 + 16 && mouseY >= py && mouseY < py + 16) {
+                    this.previewTooltipStack = s;
+                }
                 g.renderFakeItem(s, px + 26 + 26 + 58, py);
                 g.renderItemDecorations(this.font, s, px + 26 + 26 + 58, py);
             }
             if (emptySB && !sb.isEmpty()) {
-                g.renderFakeItem(sb, px + 26 + 26 + 58, py + 23);
-                g.renderItemDecorations(this.font, sb, px + 26 + 26 + 58, py + 23);
+                if (mouseX >= bx + 26 + 26 + 58 && mouseX < bx + 26 + 26 + 58 + 16 && mouseY >= py && mouseY < py + 16) {
+                    this.previewTooltipStack = sb;
+                }
+                g.renderFakeItem(sb, px + 26 + 26 + 26 + 58, py);
+                g.renderItemDecorations(this.font, sb, px + 26 + 26 + 26 + 58, py);
             }
         }
+        if (this.previewTooltipStack != null && !this.previewTooltipStack.isEmpty()) {
+            renderItemTooltipTextOnly(g, this.previewTooltipStack, mouseX, mouseY);
+        }
         this.renderTooltip(g, mouseX, mouseY);
+    }
+    private void renderItemTooltipTextOnly(GuiGraphics g, ItemStack stack, int mouseX, int mouseY) {
+        if (stack == null || stack.isEmpty()) return;
+
+        var mc = Minecraft.getInstance();
+        var player = mc.player;
+        if (player == null) return;
+
+        var ctx = net.minecraft.world.item.Item.TooltipContext.of(player.level());
+        var flag = mc.options.advancedItemTooltips
+                ? net.minecraft.world.item.TooltipFlag.ADVANCED
+                : net.minecraft.world.item.TooltipFlag.NORMAL;
+
+        List<Component> lines = stack.getTooltipLines(ctx, player, flag);
+
+        List<ClientTooltipComponent> comps = new ArrayList<>();
+        int maxWidth = 240;
+
+        for (Component c : lines) {
+            List<FormattedCharSequence> baked = this.font.split(c, maxWidth);
+            for (FormattedCharSequence seq : baked) {
+                comps.add(new ClientTextTooltip(seq));
+            }
+        }
+        g.renderTooltip(this.font, comps, mouseX, mouseY, offsetPositioner(12, 16), null); // giống OwnerTooltip [cite:28]
+    }
+    private static ClientTooltipPositioner offsetPositioner(int ox, int oy) {
+        return (screenW, screenH, mouseX, mouseY, tooltipW, tooltipH) -> {
+            Vector2ic base = DefaultTooltipPositioner.INSTANCE.positionTooltip(
+                    screenW, screenH,
+                    mouseX + ox, mouseY + oy,
+                    tooltipW, tooltipH
+            );
+            return new Vector2i(base.x(), base.y());
+        };
     }
     private void renderScaledFakeItem(GuiGraphics g, ItemStack stack, int x, int y, float scale, float itemoff) {
         if (stack.isEmpty()) return;

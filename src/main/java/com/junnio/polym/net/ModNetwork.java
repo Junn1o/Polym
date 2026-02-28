@@ -78,7 +78,7 @@ public class ModNetwork {
                     @Override public AbstractContainerMenu createMenu(int syncId, Inventory inv, Player p) {
                         return new SellerScreenHandler(syncId, inv, p, openData);
                     }
-                    @Override public Component getDisplayName() { return Component.literal("Shop"); }
+                    @Override public Component getDisplayName() { return Component.translatable("container.seller"); }
                 });
             });
         });
@@ -121,7 +121,7 @@ public class ModNetwork {
                         return new ShopScreenHandler(syncId, inv, p, openData);
                     }
 
-                    @Override public Component getDisplayName() { return Component.literal("All Shops"); }
+                    @Override public Component getDisplayName() { return Component.translatable("container.shop"); }
                 });
             });
         });

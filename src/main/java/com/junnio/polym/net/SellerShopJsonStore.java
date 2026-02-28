@@ -4,8 +4,11 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.junnio.polym.net.shop.ShopOfferData;
 import com.junnio.polym.net.shop.ShopOfferViewData;
+import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.TagParser;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.item.Item;
@@ -116,28 +119,30 @@ public final class SellerShopJsonStore {
     }
     private StackJson encodeStack(ItemStack stack) {
         if (stack == null || stack.isEmpty()) return null;
-        Identifier id = BuiltInRegistries.ITEM.getKey(stack.getItem());
-        if (id == null) return null;
+
+        var ops = net.minecraft.resources.RegistryOps.create(
+                com.mojang.serialization.JsonOps.INSTANCE,
+                server.registryAccess()
+        );
+
+        var el = ItemStack.CODEC.encodeStart(ops, stack).result().orElse(null);
+        if (el == null) return null;
 
         StackJson sj = new StackJson();
-        sj.item = id.toString();
-        sj.count = Math.max(1, Math.min(64, stack.getCount())); // clamp nhẹ
+        sj.stack = el;
         return sj;
     }
 
     private ItemStack decodeStack(StackJson json) {
-        if (json == null || json.item == null || json.item.isBlank()) return ItemStack.EMPTY;
+        if (json == null || json.stack == null) return ItemStack.EMPTY;
 
-        Identifier id = Identifier.tryParse(json.item);
-        if (id == null) return ItemStack.EMPTY;
-        Optional<Holder.Reference<Item>> opt = BuiltInRegistries.ITEM.get(id);
-        if (opt.isEmpty()) return ItemStack.EMPTY;
-
-        Item item = opt.get().value();
-        int count = json.count <= 0 ? 1 : Math.min(json.count, 64);
-
-        return new ItemStack(item, count);
+        var ops = net.minecraft.resources.RegistryOps.create(
+                com.mojang.serialization.JsonOps.INSTANCE,
+                server.registryAccess()
+        );
+        return ItemStack.CODEC.parse(ops, json.stack).result().orElse(ItemStack.EMPTY);
     }
+
     // ---- decode offers list ----
     private List<ShopOfferData> decodeOffers(List<OfferJson> offersJson) {
         if (offersJson == null) return List.of();
@@ -174,6 +179,9 @@ public final class SellerShopJsonStore {
     private static final class RootJson { Map<String, ShopJson> shops; }
     private static final class ShopJson { String name; List<OfferJson> offers; }
     private static final class OfferJson { StackJson buyA, buyB, buyC, sell, sellB; }
-    private static final class StackJson { String item; int count; }
+    private static final class StackJson {
+        com.google.gson.JsonElement stack;
+    }
+
     private record ShopEntry(String name, List<ShopOfferData> offers) {}
 }
