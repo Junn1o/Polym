@@ -1,17 +1,10 @@
-package com.junnio.polym.net;
+package com.junnio.polym.util;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.junnio.polym.net.shop.ShopOfferData;
 import com.junnio.polym.net.shop.ShopOfferViewData;
-import com.mojang.brigadier.exceptions.CommandSyntaxException;
-import net.minecraft.core.Holder;
-import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.TagParser;
-import net.minecraft.resources.Identifier;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.storage.LevelResource;
 

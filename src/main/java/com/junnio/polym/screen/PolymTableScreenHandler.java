@@ -3,6 +3,8 @@ package com.junnio.polym.screen;
 import com.junnio.polym.recipe.ModRecipes;
 import com.junnio.polym.recipe.PolymRecipe;
 import com.junnio.polym.sound.ModSounds;
+import com.junnio.polym.util.CraftAuditLogger;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.Container;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
@@ -24,6 +26,7 @@ public class PolymTableScreenHandler extends AbstractContainerMenu {
     private final TransientCraftingContainer craftingInventory;
     private final Container resultInventory;
     private final Player playerentity;
+
     public PolymTableScreenHandler(int syncId, Inventory playerInventory, Player playerentity) {
         super(ModScreenHandlers.POLYM_TABLE_SCREEN_HANDLER, syncId);
 
@@ -40,6 +43,26 @@ public class PolymTableScreenHandler extends AbstractContainerMenu {
                 if (player.level().isClientSide()) {
                     player.playSound(ModSounds.POLYM_ON_CRAFT, 1.0F, 1.0F);
                 }
+                if (player instanceof ServerPlayer sp) {
+                    CraftingInput in = craftingInventory.asCraftInput();
+
+                    var polymOpt = world.getServer()
+                            .getRecipeManager()
+                            .getRecipeFor(ModRecipes.POLYM_CRAFTING_TYPE, in, world);
+
+                    if (polymOpt.isPresent()) {
+                        var holder = polymOpt.get();
+
+                        boolean blockedGuild = !playerentity.getTags().contains("Guild")
+                                && holder.id().identifier().getPath().startsWith("guild_");
+
+                        if (!blockedGuild) {
+                            ItemStack resultToLog = holder.value().assemble(in, world.registryAccess()).copy();
+                            CraftAuditLogger.logPolymCraft(sp, holder.id().identifier(), resultToLog);
+                        }
+                    }
+                }
+
                 consumeIngredients();
                 updateRecipeOutput();
                 super.onTake(player, stack);
@@ -168,29 +191,28 @@ public class PolymTableScreenHandler extends AbstractContainerMenu {
     public void updateRecipeOutput() {
         if (!this.world.isClientSide()) {
             CraftingInput recipeInput = craftingInventory.asCraftInput();
-             var polymRecipe = this.world.getServer()
+            var polymOpt = this.world.getServer()
                     .getRecipeManager()
                     .getRecipeFor(ModRecipes.POLYM_CRAFTING_TYPE, recipeInput, this.world);
 
-            if (polymRecipe.isPresent()) {
+            if (polymOpt.isPresent()) {
+                var holder = polymOpt.get();
                 if (!playerentity.getTags().contains("Guild")
-                        && polymRecipe.get().id().identifier().getPath().startsWith("guild_")) {
+                        && holder.id().identifier().getPath().startsWith("guild_")) {
                     this.resultInventory.setItem(0, ItemStack.EMPTY);
                     return;
                 }
-                var holder = polymRecipe.get();
-                ItemStack result = holder.value().assemble(recipeInput, this.world.registryAccess());
-                this.resultInventory.setItem(0, result);
+                this.resultInventory.setItem(0, holder.value().assemble(recipeInput, this.world.registryAccess()));
                 return;
             }
 
-            var vanillaRecipe = this.world.getServer()
+            var vanillaOpt = this.world.getServer()
                     .getRecipeManager()
                     .getRecipeFor(RecipeType.CRAFTING, recipeInput, this.world);
 
-            if (vanillaRecipe.isPresent()) {
-                if (vanillaRecipe.get().id().identifier().getNamespace().equals("polym")) {
-                    var holder = vanillaRecipe.get();
+            if (vanillaOpt.isPresent()) {
+                var holder = vanillaOpt.get();
+                if (holder.id().identifier().getNamespace().equals("polym")) {
                     ItemStack result = holder.value().assemble(recipeInput, this.world.registryAccess());
                     this.resultInventory.setItem(0, result);
                     return;
