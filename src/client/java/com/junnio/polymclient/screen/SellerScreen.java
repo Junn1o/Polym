@@ -324,7 +324,7 @@ public class SellerScreen extends AbstractContainerScreen<SellerScreenHandler> {
                 comps.add(new ClientTextTooltip(seq));
             }
         }
-        g.renderTooltip(this.font, comps, mouseX, mouseY, offsetPositioner(12, 16), null); // giống OwnerTooltip [cite:28]
+        g.renderTooltip(this.font, comps, mouseX, mouseY, offsetPositioner(0, 0), null);
     }
     private static ClientTooltipPositioner offsetPositioner(int ox, int oy) {
         return (screenW, screenH, mouseX, mouseY, tooltipW, tooltipH) -> {

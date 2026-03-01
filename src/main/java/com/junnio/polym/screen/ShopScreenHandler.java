@@ -39,6 +39,18 @@ public class ShopScreenHandler extends AbstractContainerMenu {
     @Override
     public void removed(Player player) {
         super.removed(player);
+        if (!player.level().isClientSide()) {
+            for (int s = 0; s < this.offerInv.getContainerSize(); s++) {
+                ItemStack stack = this.offerInv.getItem(s);
+                if (!stack.isEmpty()) {
+                    if (!player.getInventory().add(stack.copy())) {
+                        player.drop(stack.copy(), false);
+                    }
+                    this.offerInv.setItem(s, ItemStack.EMPTY);
+                }
+            }
+            this.offerInv.setChanged();
+        }
         ItemStack carried = this.getCarried();
         if (!carried.isEmpty()) {
             if (!player.getInventory().add(carried)) {
