@@ -98,6 +98,7 @@ public class ShopScreen extends AbstractContainerScreen<ShopScreenHandler> {
 
                 if (idx >= 0 && idx < this.offersView.size()) {
                     this.previewOffer = this.offersView.get(idx);
+                    invalidateTooltipCache();
                 } else {
                     this.previewOffer = null;
                 }
@@ -118,6 +119,10 @@ public class ShopScreen extends AbstractContainerScreen<ShopScreenHandler> {
         this.addRenderableWidget(this.searchBox);
         if (this.searchBox != null) this.searchBox.setFocused(false);
         this.setFocused(null);
+    }
+    private void invalidateTooltipCache() {
+        this.cachedTooltipKey = ItemStack.EMPTY;
+        this.cachedTooltip = List.of();
     }
     @Nullable
     private ShopOfferViewData getHoveredOffer(int mouseX, int mouseY) {

@@ -26,6 +26,7 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Vector2i;
@@ -71,6 +72,11 @@ public class SellerScreen extends AbstractContainerScreen<SellerScreenHandler> {
     @Nullable private ItemStack previewTooltipStack = null;
     private ItemStack cachedTooltipKey = ItemStack.EMPTY;
     private List<ClientTooltipComponent> cachedTooltip = List.of();
+    private long missingFlashUntilMs = 0L;
+    private int missingFlashMask = 0;
+
+    private static final int MISS_BUY_A = 1 << 0;
+    private static final int MISS_SELL  = 1 << 1;
     public SellerScreen(SellerScreenHandler handler, Inventory inv, Component title) {
         super(handler, inv, title);
         this.imageWidth = 276;
@@ -94,6 +100,7 @@ public class SellerScreen extends AbstractContainerScreen<SellerScreenHandler> {
 
                 if (idx >= 0 && idx < this.offersView.size()) {
                     this.previewOffer = this.offersView.get(idx);
+                    invalidateTooltipCache();
                 } else {
                     this.previewOffer = null;
                 }
@@ -121,8 +128,19 @@ public class SellerScreen extends AbstractContainerScreen<SellerScreenHandler> {
         }).pos(xOutside, yBase + 24).size(btnW, btnH).build());
 
         this.saveBtn = this.addRenderableWidget(Button.builder(Component.literal("Save"), b -> {
-            if (!validateRequiredSlots()) return;
-
+            var missing = getMissingRequiredSlots();
+            if (!missing.isEmpty()) {
+                this.minecraft.getToastManager().addToast(
+                        net.minecraft.client.gui.components.toasts.SystemToast.multiline(
+                                this.minecraft,
+                                net.minecraft.client.gui.components.toasts.SystemToast.SystemToastId.NARRATOR_TOGGLE,
+                                Component.translatable("toast.message.title"),
+                                Component.translatable("toast.message.content")
+                        )
+                );
+                flashMissingSlots(missing);
+                return;
+            }
             if (this.mode == ActionMode.ADDING) {
                 ClientPlayNetworking.send(new AddOfferFromSlotsPayload());
             } else if (this.mode == ActionMode.EDITING) {
@@ -152,10 +170,29 @@ public class SellerScreen extends AbstractContainerScreen<SellerScreenHandler> {
         updateOfferButtons();
         updateActionButtons();
     }
-    private boolean validateRequiredSlots() {
-        ItemStack a = this.menu.getSlot(SellerScreenHandler.SLOT_BUY_A).getItem();
-        ItemStack s = this.menu.getSlot(SellerScreenHandler.SLOT_SELL).getItem();
-        return !a.isEmpty() && !s.isEmpty();
+    private void invalidateTooltipCache() {
+        this.cachedTooltipKey = ItemStack.EMPTY;
+        this.cachedTooltip = List.of();
+    }
+    private void flashMissingSlots(List<Integer> missing) {
+        int mask = 0;
+        for (int id : missing) {
+            if (id == SellerScreenHandler.SLOT_BUY_A) mask |= MISS_BUY_A;
+            if (id == SellerScreenHandler.SLOT_SELL)  mask |= MISS_SELL;
+        }
+        this.missingFlashMask = mask;
+        this.missingFlashUntilMs = System.currentTimeMillis() + 900; // 0.9s
+    }
+    private List<Integer> getMissingRequiredSlots() {
+        List<Integer> missing = new ArrayList<>(2);
+
+        if (this.menu.getSlot(SellerScreenHandler.SLOT_BUY_A).getItem().isEmpty()) {
+            missing.add(SellerScreenHandler.SLOT_BUY_A);
+        }
+        if (this.menu.getSlot(SellerScreenHandler.SLOT_SELL).getItem().isEmpty()) {
+            missing.add(SellerScreenHandler.SLOT_SELL);
+        }
+        return missing;
     }
 
     private boolean hasSelection() {
@@ -186,6 +223,7 @@ public class SellerScreen extends AbstractContainerScreen<SellerScreenHandler> {
         offersView.addAll(offers);
         updateOfferButtons();
         updateActionButtons();
+        invalidateTooltipCache();
     }
     private void updateOfferButtons() {
         boolean locked = (this.mode != ActionMode.NORMAL);
@@ -296,7 +334,28 @@ public class SellerScreen extends AbstractContainerScreen<SellerScreenHandler> {
         if (this.previewTooltipStack != null && !this.previewTooltipStack.isEmpty()) {
             renderItemTooltipTextOnly(g, this.previewTooltipStack, mouseX, mouseY);
         }
+        renderMissingSlotOverlay(g);
         this.renderTooltip(g, mouseX, mouseY);
+    }
+    private void renderMissingSlotOverlay(GuiGraphics g) {
+        long now = System.currentTimeMillis();
+        if (now >= this.missingFlashUntilMs || this.missingFlashMask == 0) return;
+
+        boolean on = ((now / 120) % 2) == 0;
+        int fill = on ? 0x66FF0000 : 0x22FF0000;
+
+        if ((this.missingFlashMask & MISS_BUY_A) != 0) {
+            drawSlotOverlay(g, SellerScreenHandler.SLOT_BUY_A, fill);
+        }
+        if ((this.missingFlashMask & MISS_SELL) != 0) {
+            drawSlotOverlay(g, SellerScreenHandler.SLOT_SELL, fill);
+        }
+    }
+    private void drawSlotOverlay(GuiGraphics g, int slotId, int color) {
+        Slot slot = this.menu.getSlot(slotId);
+        int x = this.leftPos + slot.x;
+        int y = this.topPos + slot.y;
+        g.fill(x, y, x + 16, y + 16, color);
     }
     private void renderItemTooltipTextOnly(GuiGraphics g, ItemStack stack, int mouseX, int mouseY) {
         if (stack == null || stack.isEmpty()) return;
@@ -461,8 +520,7 @@ public class SellerScreen extends AbstractContainerScreen<SellerScreenHandler> {
 
         OfferButton(int x, int y, int rowIndex, Button.OnPress onPress) {
             super(x, y, 88, 20, CommonComponents.EMPTY, onPress, DEFAULT_NARRATION);
-            cachedTooltipKey = ItemStack.EMPTY;
-            cachedTooltip = List.of();
+            invalidateTooltipCache();
             this.rowIndex = rowIndex;
         }
     }

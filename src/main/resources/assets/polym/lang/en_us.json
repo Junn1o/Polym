@@ -15,5 +15,7 @@
   "itemGroup.polymgroup": "Polym",
   "container.polym_table": "Polym Crafting",
   "container.shop" : "Shop",
-  "container.seller" : "Sell"
+  "container.seller" : "Sell",
+  "toast.message.title" : "Missing Items",
+  "toast.message.content" : "You must have 2 item in require slot"
 }
