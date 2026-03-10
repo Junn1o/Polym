@@ -18,6 +18,8 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@v4
+      - name: Grant execute permission for gradlew
+        run: chmod +x ./gradlew
       - name: Set up JDK 21
         uses: actions/setup-java@v4
         with:
@@ -29,5 +31,5 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: minecraft-fabric
+          name: minecraft-plugin
           path: build/libs/*.jar
