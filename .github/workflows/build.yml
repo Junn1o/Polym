@@ -7,9 +7,9 @@ name: Minecraft Java Build
 
 on:
   push:
-    branches: [ wip ]
+    branches: [ Main ]
   pull_request:
-    branches: [ wip ]
+    branches: [ Main ]
 
 jobs:
   build:
@@ -31,5 +31,5 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: minecraft-plugin
+          name: Polym
           path: build/libs/*.jar
