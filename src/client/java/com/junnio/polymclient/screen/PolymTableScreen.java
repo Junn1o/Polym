@@ -29,40 +29,40 @@ public class PolymTableScreen extends AbstractContainerScreen<PolymTableScreenHa
     @Override
     protected void init() {
         super.init();
-        int top = this.topPos + 4;
-        int right  = this.leftPos + this.imageWidth;
-        assert Minecraft.getInstance().player != null;
-        UUID uuid = Minecraft.getInstance().player.getUUID();
-        this.addRenderableWidget(
-                Button.builder(Component.literal("+"), btn -> {
-                    var player = Minecraft.getInstance().player;
-                    if (player != null && player.containerMenu != null) {
-                        ItemStack carried = player.containerMenu.getCarried();
-                        if (!carried.isEmpty()) {
-                            if (!player.getInventory().add(carried.copy())) {
-                                player.drop(carried.copy(), false);
-                            }
-                            player.containerMenu.setCarried(ItemStack.EMPTY);
-                        }
-                    }
-                    ClientPlayNetworking.send(new OpenAllShopsPayload());
-                }).bounds(right, top, 16, 16).build()
-        );
-        this.addRenderableWidget(
-                Button.builder(Component.literal("-"), btn -> {
-                    var player = Minecraft.getInstance().player;
-                    if (player != null && player.containerMenu != null) {
-                        ItemStack carried = player.containerMenu.getCarried();
-                        if (!carried.isEmpty()) {
-                            if (!player.getInventory().add(carried.copy())) {
-                                player.drop(carried.copy(), false);
-                            }
-                            player.containerMenu.setCarried(ItemStack.EMPTY);
-                        }
-                    }
-                    ClientPlayNetworking.send(new OpenShopByOwnerPayload(uuid));
-                }).bounds(right, top+20, 16, 16).build()
-        );
+//        int top = this.topPos + 4;
+//        int right  = this.leftPos + this.imageWidth;
+//        assert Minecraft.getInstance().player != null;
+//        UUID uuid = Minecraft.getInstance().player.getUUID();
+//        this.addRenderableWidget(
+//                Button.builder(Component.literal("+"), btn -> {
+//                    var player = Minecraft.getInstance().player;
+//                    if (player != null && player.containerMenu != null) {
+//                        ItemStack carried = player.containerMenu.getCarried();
+//                        if (!carried.isEmpty()) {
+//                            if (!player.getInventory().add(carried.copy())) {
+//                                player.drop(carried.copy(), false);
+//                            }
+//                            player.containerMenu.setCarried(ItemStack.EMPTY);
+//                        }
+//                    }
+//                    ClientPlayNetworking.send(new OpenAllShopsPayload());
+//                }).bounds(right, top, 16, 16).build()
+//        );
+//        this.addRenderableWidget(
+//                Button.builder(Component.literal("-"), btn -> {
+//                    var player = Minecraft.getInstance().player;
+//                    if (player != null && player.containerMenu != null) {
+//                        ItemStack carried = player.containerMenu.getCarried();
+//                        if (!carried.isEmpty()) {
+//                            if (!player.getInventory().add(carried.copy())) {
+//                                player.drop(carried.copy(), false);
+//                            }
+//                            player.containerMenu.setCarried(ItemStack.EMPTY);
+//                        }
+//                    }
+//                    ClientPlayNetworking.send(new OpenShopByOwnerPayload(uuid));
+//                }).bounds(right, top+20, 16, 16).build()
+//        );
     }
 
     @Override
