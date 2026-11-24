@@ -1,5 +1,6 @@
 package com.junnio.mixin;
 
+import com.junnio.polym.Polym;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
@@ -50,7 +51,7 @@ public abstract class CrafterBlockMixin {
         Identifier recipeId = recipe.get().id().identifier();
 
         // Check if this is your specific recipe
-        if (recipeId.getNamespace().equals("polym")) {
+        if (recipeId.getNamespace().equals(Polym.MOD_ID)) {
             world.levelEvent(1050, pos, 0);
             ci.cancel();
         }

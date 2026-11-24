@@ -38,20 +38,26 @@ public class SellerScreenHandler extends AbstractContainerMenu {
     public void editOfferFromSlotsAndClear(int index) {
         if (index < 0 || index >= offers.size()) return;
 
-        ItemStack a = offerInv.getItem(0).copy();
-        ItemStack b = offerInv.getItem(1).copy();
-        ItemStack c = offerInv.getItem(2).copy();
-        ItemStack s = offerInv.getItem(3).copy();
-        ItemStack sb = offerInv.getItem(4).copy();
-        if (a.isEmpty() || s.isEmpty()) return;
-
-        offers.set(index, new ShopOfferData(a, b.isEmpty()?ItemStack.EMPTY:b, c.isEmpty()?ItemStack.EMPTY:c, s, sb.isEmpty()?ItemStack.EMPTY:sb));
-        offerInv.setItem(SLOT_BUY_A, ItemStack.EMPTY);
-        offerInv.setItem(SLOT_BUY_B, ItemStack.EMPTY);
-        offerInv.setItem(SLOT_BUY_C, ItemStack.EMPTY);
-        offerInv.setItem(SLOT_SELL,  ItemStack.EMPTY);
-        offerInv.setItem(SLOT_SELL_B,  ItemStack.EMPTY);
+        ShopOfferData offer = takeOfferFromSlots();
+        if (offer == null) return;
+        offers.set(index, offer);
         this.broadcastChanges();
+    }
+
+    private ShopOfferData takeOfferFromSlots() {
+        ItemStack a = offerInv.getItem(SLOT_BUY_A);
+        ItemStack s = offerInv.getItem(SLOT_SELL);
+        if (a.isEmpty() || s.isEmpty()) return null;
+
+        ShopOfferData offer = new ShopOfferData(
+                a.copy(),
+                offerInv.getItem(SLOT_BUY_B).copy(),
+                offerInv.getItem(SLOT_BUY_C).copy(),
+                s.copy(),
+                offerInv.getItem(SLOT_SELL_B).copy()
+        );
+        offerInv.clearContent();
+        return offer;
     }
 
     public void deleteOffer(int index) {
@@ -60,19 +66,9 @@ public class SellerScreenHandler extends AbstractContainerMenu {
         broadcastChanges();
     }
     public void addOfferFromSlots() {
-        ItemStack a = offerInv.getItem(0).copy();
-        ItemStack b = offerInv.getItem(1).copy();
-        ItemStack c = offerInv.getItem(2).copy();
-        ItemStack s = offerInv.getItem(3).copy();
-        ItemStack sb = offerInv.getItem(4).copy();
-        if (a.isEmpty() || s.isEmpty()) return;
-
-        offers.add(new ShopOfferData(a, b.isEmpty()?ItemStack.EMPTY:b, c.isEmpty()?ItemStack.EMPTY:c, s, sb.isEmpty()?ItemStack.EMPTY:sb));
-        offerInv.setItem(SLOT_BUY_A, ItemStack.EMPTY);
-        offerInv.setItem(SLOT_BUY_B, ItemStack.EMPTY);
-        offerInv.setItem(SLOT_BUY_C, ItemStack.EMPTY);
-        offerInv.setItem(SLOT_SELL,  ItemStack.EMPTY);
-        offerInv.setItem(SLOT_SELL_B,  ItemStack.EMPTY);
+        ShopOfferData offer = takeOfferFromSlots();
+        if (offer == null) return;
+        offers.add(offer);
         this.broadcastChanges();
     }
 

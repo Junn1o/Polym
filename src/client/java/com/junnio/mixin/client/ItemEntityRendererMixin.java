@@ -4,8 +4,12 @@ import com.junnio.polym.item.ItemGlow;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.entity.ItemEntityRenderer;
 import net.minecraft.client.renderer.entity.state.ItemEntityRenderState;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.ClipContext;
+import net.minecraft.world.phys.HitResult;
+import net.minecraft.world.phys.Vec3;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -24,22 +28,19 @@ public class ItemEntityRendererMixin {
 	}
 
 	private static boolean polym$hasClearLineOfSight(ItemEntity entity, float tickDelta) {
-		var mc = net.minecraft.client.Minecraft.getInstance();
-		var camEntity = mc.getCameraEntity();
-		var level = mc.level;
-		if (camEntity == null || level == null) return false;
-		var from = camEntity.getEyePosition(tickDelta);
-		var to = entity.getBoundingBox().getCenter();
+		Minecraft mc = Minecraft.getInstance();
+		Entity camEntity = mc.getCameraEntity();
+		if (camEntity == null || mc.level == null) return false;
+		Vec3 from = camEntity.getEyePosition(tickDelta);
+		Vec3 to = entity.getBoundingBox().getCenter();
 
-		var ctx = new net.minecraft.world.level.ClipContext(
+		HitResult hit = mc.level.clip(new ClipContext(
 				from, to,
-				net.minecraft.world.level.ClipContext.Block.COLLIDER,
-				net.minecraft.world.level.ClipContext.Fluid.NONE,
+				ClipContext.Block.COLLIDER,
+				ClipContext.Fluid.NONE,
 				camEntity
-		);
-
-		var hit = level.clip(ctx);
-		if (hit.getType() == net.minecraft.world.phys.HitResult.Type.MISS) return true;
+		));
+		if (hit.getType() == HitResult.Type.MISS) return true;
 		return hit.getLocation().distanceToSqr(from) >= to.distanceToSqr(from);
 	}
 

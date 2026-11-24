@@ -2,8 +2,11 @@ package com.junnio.polym.util;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonElement;
 import com.junnio.polym.net.shop.ShopOfferData;
 import com.junnio.polym.net.shop.ShopOfferViewData;
+import com.mojang.serialization.JsonOps;
+import net.minecraft.resources.RegistryOps;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.storage.LevelResource;
@@ -21,6 +24,7 @@ public final class SellerShopJsonStore {
     private static SellerShopJsonStore INSTANCE;
     private final MinecraftServer server;
     private final Map<UUID, ShopEntry> shops = new HashMap<>();
+    private RegistryOps<JsonElement> ops;
 
     private SellerShopJsonStore(MinecraftServer server) {
         this.server = server;
@@ -28,7 +32,7 @@ public final class SellerShopJsonStore {
     }
 
     public static SellerShopJsonStore get(MinecraftServer server) {
-        if (INSTANCE == null) INSTANCE = new SellerShopJsonStore(server);
+        if (INSTANCE == null || INSTANCE.server != server) INSTANCE = new SellerShopJsonStore(server);
         return INSTANCE;
     }
 
@@ -110,15 +114,15 @@ public final class SellerShopJsonStore {
 
         return root;
     }
+    private RegistryOps<JsonElement> ops() {
+        if (ops == null) ops = RegistryOps.create(JsonOps.INSTANCE, server.registryAccess());
+        return ops;
+    }
+
     private StackJson encodeStack(ItemStack stack) {
         if (stack == null || stack.isEmpty()) return null;
 
-        var ops = net.minecraft.resources.RegistryOps.create(
-                com.mojang.serialization.JsonOps.INSTANCE,
-                server.registryAccess()
-        );
-
-        var el = ItemStack.CODEC.encodeStart(ops, stack).result().orElse(null);
+        var el = ItemStack.CODEC.encodeStart(ops(), stack).result().orElse(null);
         if (el == null) return null;
 
         StackJson sj = new StackJson();
@@ -129,11 +133,7 @@ public final class SellerShopJsonStore {
     private ItemStack decodeStack(StackJson json) {
         if (json == null || json.stack == null) return ItemStack.EMPTY;
 
-        var ops = net.minecraft.resources.RegistryOps.create(
-                com.mojang.serialization.JsonOps.INSTANCE,
-                server.registryAccess()
-        );
-        return ItemStack.CODEC.parse(ops, json.stack).result().orElse(ItemStack.EMPTY);
+        return ItemStack.CODEC.parse(ops(), json.stack).result().orElse(ItemStack.EMPTY);
     }
 
     // ---- decode offers list ----
@@ -173,7 +173,7 @@ public final class SellerShopJsonStore {
     private static final class ShopJson { String name; List<OfferJson> offers; }
     private static final class OfferJson { StackJson buyA, buyB, buyC, sell, sellB; }
     private static final class StackJson {
-        com.google.gson.JsonElement stack;
+        JsonElement stack;
     }
 
     private record ShopEntry(String name, List<ShopOfferData> offers) {}
