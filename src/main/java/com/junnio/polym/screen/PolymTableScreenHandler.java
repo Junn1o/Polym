@@ -1,11 +1,11 @@
 package com.junnio.polym.screen;
 
-import com.junnio.polym.Polym;
 import com.junnio.polym.command.ModCommand;
 import com.junnio.polym.recipe.ModRecipes;
 import com.junnio.polym.recipe.PolymRecipe;
 import com.junnio.polym.sound.ModSounds;
 import com.junnio.polym.util.CraftAuditLogger;
+import net.minecraft.core.NonNullList;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.Container;
 import net.minecraft.world.entity.player.Inventory;
@@ -16,6 +16,7 @@ import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.inventory.TransientCraftingContainer;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.CraftingInput;
+import net.minecraft.world.item.crafting.CraftingRecipe;
 import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.world.item.crafting.RecipeManager;
 import net.minecraft.world.item.crafting.RecipeType;
@@ -27,6 +28,7 @@ public class PolymTableScreenHandler extends AbstractContainerMenu {
     private final Container resultInventory;
     private final Player playerentity;
     private RecipeHolder<PolymRecipe> currentPolymRecipe;
+    private RecipeHolder<CraftingRecipe> currentVanillaRecipe;
 
     public PolymTableScreenHandler(int syncId, Inventory playerInventory, Player playerentity) {
         super(ModScreenHandlers.POLYM_TABLE_SCREEN_HANDLER, syncId);
@@ -50,7 +52,7 @@ public class PolymTableScreenHandler extends AbstractContainerMenu {
                     CraftAuditLogger.logPolymCraft(sp, currentPolymRecipe.id().identifier(), resultToLog);
                 }
 
-                consumeIngredients();
+                consumeIngredients(player);
                 updateRecipeOutput();
                 super.onTake(player, stack);
             }
@@ -77,7 +79,13 @@ public class PolymTableScreenHandler extends AbstractContainerMenu {
         }
 
     }
-    private void consumeIngredients() {
+    private void consumeIngredients(Player player) {
+        RecipeHolder<CraftingRecipe> vanilla = currentVanillaRecipe;
+        CraftingInput.Positioned positioned = craftingInventory.asPositionedCraftInput();
+        NonNullList<ItemStack> remainders = vanilla == null
+                ? null
+                : vanilla.value().getRemainingItems(positioned.input());
+
         for (int i = 0; i < craftingInventory.getContainerSize(); i++) {
             ItemStack slotStack = craftingInventory.getItem(i);
 
@@ -87,6 +95,25 @@ public class PolymTableScreenHandler extends AbstractContainerMenu {
 
                 if (slotStack.getCount() == 0) {
                     craftingInventory.setItem(i, ItemStack.EMPTY);
+                }
+            }
+        }
+
+        if (remainders != null) {
+            int width = positioned.input().width();
+            for (int i = 0; i < remainders.size(); i++) {
+                ItemStack remainder = remainders.get(i);
+                if (remainder.isEmpty()) continue;
+
+                int slot = (i % width + positioned.left()) + (i / width + positioned.top()) * craftingInventory.getWidth();
+                ItemStack current = craftingInventory.getItem(slot);
+                if (current.isEmpty()) {
+                    craftingInventory.setItem(slot, remainder);
+                } else if (ItemStack.isSameItemSameComponents(current, remainder)) {
+                    remainder.grow(current.getCount());
+                    craftingInventory.setItem(slot, remainder);
+                } else if (!player.getInventory().add(remainder)) {
+                    player.drop(remainder, false);
                 }
             }
         }
@@ -178,6 +205,7 @@ public class PolymTableScreenHandler extends AbstractContainerMenu {
     public void updateRecipeOutput() {
         if (!this.world.isClientSide()) {
             this.currentPolymRecipe = null;
+            this.currentVanillaRecipe = null;
             CraftingInput recipeInput = craftingInventory.asCraftInput();
             if (recipeInput.isEmpty()) {
                 this.resultInventory.setItem(0, ItemStack.EMPTY);
@@ -202,11 +230,9 @@ public class PolymTableScreenHandler extends AbstractContainerMenu {
 
             if (vanillaOpt.isPresent()) {
                 var holder = vanillaOpt.get();
-                if (holder.id().identifier().getNamespace().equals(Polym.MOD_ID)) {
-                    ItemStack result = holder.value().assemble(recipeInput, this.world.registryAccess());
-                    this.resultInventory.setItem(0, result);
-                    return;
-                }
+                this.currentVanillaRecipe = holder;
+                this.resultInventory.setItem(0, holder.value().assemble(recipeInput, this.world.registryAccess()));
+                return;
             }
             this.resultInventory.setItem(0, ItemStack.EMPTY);
         }
