@@ -33,9 +33,10 @@ jobs:
       - name: server gametests
         run: ./gradlew runGameTest
       - name: client gametests
+        # xvfb defaults to an 8-bit screen, which cannot create an OpenGL context
         run: |
-          sudo apt-get update -q && sudo apt-get install -y -q xvfb
-          xvfb-run -a ./gradlew --no-parallel runClientGameTest
+          sudo apt-get update -q && sudo apt-get install -y -q xvfb libgl1-mesa-dri libglx-mesa0
+          xvfb-run -a -s "-screen 0 1920x1080x24" ./gradlew --no-parallel runClientGameTest
 
       - name: read mod version
         id: version
@@ -51,6 +52,15 @@ jobs:
         with:
           name: Screenshots
           path: versions/*/build/run/clientGameTest/screenshots/
+          if-no-files-found: ignore
+      - name: capture gametest logs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Gametest-logs
+          path: |
+            versions/*/build/run/clientGameTest/logs/
+            versions/*/build/run/clientGameTest/crash-reports/
           if-no-files-found: ignore
 
       # a release is only made when the version in gradle.properties has no tag yet
