@@ -1,14 +1,13 @@
-package com.junnio.polym.net;
+package com.junnio.polym.util;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonElement;
 import com.junnio.polym.net.shop.ShopOfferData;
 import com.junnio.polym.net.shop.ShopOfferViewData;
-import net.minecraft.core.Holder;
-import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.resources.Identifier;
+import com.mojang.serialization.JsonOps;
+import net.minecraft.resources.RegistryOps;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.storage.LevelResource;
 
@@ -25,6 +24,7 @@ public final class SellerShopJsonStore {
     private static SellerShopJsonStore INSTANCE;
     private final MinecraftServer server;
     private final Map<UUID, ShopEntry> shops = new HashMap<>();
+    private RegistryOps<JsonElement> ops;
 
     private SellerShopJsonStore(MinecraftServer server) {
         this.server = server;
@@ -32,12 +32,12 @@ public final class SellerShopJsonStore {
     }
 
     public static SellerShopJsonStore get(MinecraftServer server) {
-        if (INSTANCE == null) INSTANCE = new SellerShopJsonStore(server);
+        if (INSTANCE == null || INSTANCE.server != server) INSTANCE = new SellerShopJsonStore(server);
         return INSTANCE;
     }
 
     private Path filePath() {
-        Path worldRoot = server.getWorldPath(LevelResource.ROOT); // nếu mapping khác, IDE sẽ gợi ý tương đương
+        Path worldRoot = server.getWorldPath(LevelResource.ROOT);
         return worldRoot.resolve("polym").resolve("seller_shops.json");
     }
 
@@ -103,7 +103,9 @@ public final class SellerShopJsonStore {
                 OfferJson oj = new OfferJson();
                 oj.buyA = encodeStack(o.buyA());
                 oj.buyB = encodeStack(o.buyB());
+                oj.buyC = encodeStack(o.buyC());
                 oj.sell = encodeStack(o.sell());
+                oj.sellB = encodeStack(o.sellB());
                 sj.offers.add(oj);
             }
 
@@ -112,30 +114,28 @@ public final class SellerShopJsonStore {
 
         return root;
     }
+    private RegistryOps<JsonElement> ops() {
+        if (ops == null) ops = RegistryOps.create(JsonOps.INSTANCE, server.registryAccess());
+        return ops;
+    }
+
     private StackJson encodeStack(ItemStack stack) {
         if (stack == null || stack.isEmpty()) return null;
-        Identifier id = BuiltInRegistries.ITEM.getKey(stack.getItem());
-        if (id == null) return null;
+
+        var el = ItemStack.CODEC.encodeStart(ops(), stack).result().orElse(null);
+        if (el == null) return null;
 
         StackJson sj = new StackJson();
-        sj.item = id.toString();
-        sj.count = Math.max(1, Math.min(64, stack.getCount())); // clamp nhẹ
+        sj.stack = el;
         return sj;
     }
 
     private ItemStack decodeStack(StackJson json) {
-        if (json == null || json.item == null || json.item.isBlank()) return ItemStack.EMPTY;
+        if (json == null || json.stack == null) return ItemStack.EMPTY;
 
-        Identifier id = Identifier.tryParse(json.item);
-        if (id == null) return ItemStack.EMPTY;
-        Optional<Holder.Reference<Item>> opt = BuiltInRegistries.ITEM.get(id);
-        if (opt.isEmpty()) return ItemStack.EMPTY;
-
-        Item item = opt.get().value();
-        int count = json.count <= 0 ? 1 : Math.min(json.count, 64);
-
-        return new ItemStack(item, count);
+        return ItemStack.CODEC.parse(ops(), json.stack).result().orElse(ItemStack.EMPTY);
     }
+
     // ---- decode offers list ----
     private List<ShopOfferData> decodeOffers(List<OfferJson> offersJson) {
         if (offersJson == null) return List.of();
@@ -146,18 +146,12 @@ public final class SellerShopJsonStore {
 
             ItemStack buyA = decodeStack(oj.buyA);
             ItemStack buyB = decodeStack(oj.buyB);
+            ItemStack buyC = decodeStack(oj.buyC);
             ItemStack sell = decodeStack(oj.sell);
-
+            ItemStack sellB = decodeStack(oj.sellB);
             if (buyA.isEmpty() || sell.isEmpty()) continue;
 
-            out.add(new ShopOfferData(buyA, buyB, sell));
-        }
-        return out;
-    }
-    public List<ShopOfferData> getAllOffers() {
-        List<ShopOfferData> out = new ArrayList<>();
-        for (ShopEntry e : shops.values()) {
-            out.addAll(e.offers());
+            out.add(new ShopOfferData(buyA, buyB, buyC, sell, sellB));
         }
         return out;
     }
@@ -177,7 +171,10 @@ public final class SellerShopJsonStore {
     }
     private static final class RootJson { Map<String, ShopJson> shops; }
     private static final class ShopJson { String name; List<OfferJson> offers; }
-    private static final class OfferJson { StackJson buyA, buyB, sell; }
-    private static final class StackJson { String item; int count; }
+    private static final class OfferJson { StackJson buyA, buyB, buyC, sell, sellB; }
+    private static final class StackJson {
+        JsonElement stack;
+    }
+
     private record ShopEntry(String name, List<ShopOfferData> offers) {}
 }

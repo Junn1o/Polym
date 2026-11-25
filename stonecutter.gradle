@@ -1,0 +1,20 @@
+plugins {
+	id 'dev.kikugie.stonecutter'
+	id 'net.fabricmc.fabric-loom-remap' version '1.14-SNAPSHOT' apply false
+}
+
+stonecutter.active '1.21.11'
+
+stonecutter.parameters {
+	replacements {
+		// Mojang renamed ResourceLocation to Identifier in 1.21.11
+		string(stonecutter.eval(current.version, '>=1.21.11')) {
+			replace('ResourceLocation', 'Identifier')
+			replace('.id().location()', '.id().identifier()')
+		}
+		// GameProfile became a record in 1.21.9
+		string(stonecutter.eval(current.version, '>=1.21.9')) {
+			replace('getGameProfile().getName()', 'getGameProfile().name()')
+		}
+	}
+}

@@ -19,31 +19,45 @@ public class SellerScreenHandler extends AbstractContainerMenu {
     public List<ShopOfferData> getOffers() {
         return List.copyOf(this.offers);
     }
-    private final Container offerInv = new SimpleContainer(3);
+    private final Container offerInv = new SimpleContainer(5);
     public static final int SLOT_BUY_A = 0;
     public static final int SLOT_BUY_B = 1;
-    public static final int SLOT_SELL  = 2;
+    public static final int SLOT_BUY_C = 2;
+    public static final int SLOT_SELL  = 3;
+    public static final int SLOT_SELL_B  = 4;
     public SellerScreenHandler(int syncId, Inventory playerInventory, Player player, SellerOfferData data) {
         super(ModScreenHandlers.SELLER_SCREEN_HANDLER, syncId);
         this.offers = new ArrayList<>(data.offers());
-        this.addSlot(new Slot(offerInv, SLOT_BUY_A,  /*x*/ 136, /*y*/ 37));
-        this.addSlot(new Slot(offerInv, SLOT_BUY_B,  /*x*/ 162, /*y*/ 37));
-        this.addSlot(new Slot(offerInv, SLOT_SELL,   /*x*/ 220, /*y*/ 37));
+        this.addSlot(new Slot(offerInv, SLOT_BUY_A,  110, 37));
+        this.addSlot(new Slot(offerInv, SLOT_BUY_B,  136, 37));
+        this.addSlot(new Slot(offerInv, SLOT_BUY_C,  162, 37));
+        this.addSlot(new Slot(offerInv, SLOT_SELL,   220, 37));
+        this.addSlot(new Slot(offerInv, SLOT_SELL_B,   246, 37));
         this.addStandardInventorySlots(playerInventory, 108, 84);
     }
     public void editOfferFromSlotsAndClear(int index) {
         if (index < 0 || index >= offers.size()) return;
 
-        ItemStack a = offerInv.getItem(0).copy();
-        ItemStack b = offerInv.getItem(1).copy();
-        ItemStack s = offerInv.getItem(2).copy();
-        if (a.isEmpty() || s.isEmpty()) return;
-
-        offers.set(index, new ShopOfferData(a, b.isEmpty()?ItemStack.EMPTY:b, s));
-        offerInv.setItem(SLOT_BUY_A, ItemStack.EMPTY);
-        offerInv.setItem(SLOT_BUY_B, ItemStack.EMPTY);
-        offerInv.setItem(SLOT_SELL,  ItemStack.EMPTY);
+        ShopOfferData offer = takeOfferFromSlots();
+        if (offer == null) return;
+        offers.set(index, offer);
         this.broadcastChanges();
+    }
+
+    private ShopOfferData takeOfferFromSlots() {
+        ItemStack a = offerInv.getItem(SLOT_BUY_A);
+        ItemStack s = offerInv.getItem(SLOT_SELL);
+        if (a.isEmpty() || s.isEmpty()) return null;
+
+        ShopOfferData offer = new ShopOfferData(
+                a.copy(),
+                offerInv.getItem(SLOT_BUY_B).copy(),
+                offerInv.getItem(SLOT_BUY_C).copy(),
+                s.copy(),
+                offerInv.getItem(SLOT_SELL_B).copy()
+        );
+        offerInv.clearContent();
+        return offer;
     }
 
     public void deleteOffer(int index) {
@@ -52,15 +66,9 @@ public class SellerScreenHandler extends AbstractContainerMenu {
         broadcastChanges();
     }
     public void addOfferFromSlots() {
-        ItemStack a = offerInv.getItem(0).copy();
-        ItemStack b = offerInv.getItem(1).copy();
-        ItemStack s = offerInv.getItem(2).copy();
-        if (a.isEmpty() || s.isEmpty()) return;
-
-        offers.add(new ShopOfferData(a, b.isEmpty() ? ItemStack.EMPTY : b, s));
-        offerInv.setItem(SLOT_BUY_A, ItemStack.EMPTY);
-        offerInv.setItem(SLOT_BUY_B, ItemStack.EMPTY);
-        offerInv.setItem(SLOT_SELL,  ItemStack.EMPTY);
+        ShopOfferData offer = takeOfferFromSlots();
+        if (offer == null) return;
+        offers.add(offer);
         this.broadcastChanges();
     }
 
@@ -83,7 +91,7 @@ public class SellerScreenHandler extends AbstractContainerMenu {
 
     @Override
     public void clicked(int slotId, int button, ClickType clickType, Player player) {
-        if (slotId >= 0 && slotId < 3) {
+        if (slotId >= 0 && slotId < 5) {
             if (clickType != ClickType.PICKUP && clickType != ClickType.PICKUP_ALL) {
                 return;
             }

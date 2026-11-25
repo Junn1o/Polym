@@ -8,7 +8,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 
 public class ModCommand {
-    private static final String GUILD_TAG = "Guild";
+    public static final String GUILD_TAG = "Guild";
 
     public static void initialize() {
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, env) -> {

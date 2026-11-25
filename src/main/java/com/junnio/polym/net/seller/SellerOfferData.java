@@ -30,7 +30,9 @@ public record SellerOfferData(List<ShopOfferData> offers) {
                         ShopOfferData safe = new ShopOfferData(
                                 offer.buyA() == null ? ItemStack.EMPTY : offer.buyA(),
                                 offer.buyB() == null ? ItemStack.EMPTY : offer.buyB(),
-                                offer.sell() == null ? ItemStack.EMPTY : offer.sell()
+                                offer.buyC() == null ? ItemStack.EMPTY : offer.buyC(),
+                                offer.sell() == null ? ItemStack.EMPTY : offer.sell(),
+                                offer.sellB() == null ? ItemStack.EMPTY : offer.sellB()
                         );
                         ShopOfferData.CODEC.encode(buf, safe);
                     }

@@ -40,21 +40,20 @@ public record PolymRecipe(String[] pattern, Map<String, Ingredient> key, ItemSta
                 int x = i - offsetX;
                 int y = j - offsetY;
 
-                String symbolStr = " ";
+                char symbol = ' ';
                 if (x >= 0 && y >= 0 && x < pattern[0].length() && y < pattern.length) {
-                    char symbol = flipped ?
+                    symbol = flipped ?
                             pattern[y].charAt(pattern[0].length() - 1 - x) :
                             pattern[y].charAt(x);
-                    symbolStr = String.valueOf(symbol);
                 }
 
                 ItemStack stackInSlot = inv.getItem(i + j * inv.width());
-                if (symbolStr.equals(" ")) {
+                if (symbol == ' ') {
                     if (!stackInSlot.isEmpty()) {
                         return false;
                     }
                 } else {
-                    Ingredient ingredient = key.get(symbolStr);
+                    Ingredient ingredient = key.get(String.valueOf(symbol));
                     if (ingredient == null || !ingredient.test(stackInSlot)) {
                         return false;
                     }

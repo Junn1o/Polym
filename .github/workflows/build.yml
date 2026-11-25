@@ -1,10 +1,12 @@
-# Automatically build the project and run any configured tests for every push
-# and submitted pull request. This can help catch issues that only occur on
-# certain platforms or Java versions, and provides a first line of defence
-# against bad commits.
+# Builds every supported Minecraft version (Stonecutter) and runs the gametests on
+# each push and pull request. On main, a new mod_version in gradle.properties is
+# released automatically as a GitHub release with one jar per Minecraft version.
 
 name: build
 on: [pull_request, push]
+
+permissions:
+  contents: write
 
 jobs:
   build:
@@ -12,6 +14,8 @@ jobs:
     steps:
       - name: checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - name: validate gradle wrapper
         uses: gradle/actions/wrapper-validation@v4
       - name: setup jdk
@@ -19,12 +23,58 @@ jobs:
         with:
           java-version: '21'
           distribution: 'microsoft'
+      - name: setup gradle
+        uses: gradle/actions/setup-gradle@v4
       - name: make gradle wrapper executable
         run: chmod +x ./gradlew
-      - name: build
-        run: ./gradlew build
+
+      - name: build all versions
+        run: ./gradlew buildAndCollect
+      - name: server gametests
+        run: ./gradlew runGameTest
+      - name: client gametests
+        # xvfb defaults to an 8-bit screen, which cannot create an OpenGL context
+        run: |
+          sudo apt-get update -q && sudo apt-get install -y -q xvfb libgl1-mesa-dri libglx-mesa0
+          xvfb-run -a -s "-screen 0 1920x1080x24" ./gradlew --no-parallel runClientGameTest
+
+      - name: read mod version
+        id: version
+        run: echo "mod_version=$(grep '^mod_version=' gradle.properties | cut -d= -f2 | tr -d '[:space:]')" >> "$GITHUB_OUTPUT"
       - name: capture build artifacts
         uses: actions/upload-artifact@v4
         with:
           name: Artifacts
-          path: build/libs/
+          path: build/libs/${{ steps.version.outputs.mod_version }}/
+      - name: capture gametest screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Screenshots
+          path: versions/*/build/run/clientGameTest/screenshots/
+          if-no-files-found: ignore
+      - name: capture gametest logs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Gametest-logs
+          path: |
+            versions/*/build/run/clientGameTest/logs/
+            versions/*/build/run/clientGameTest/crash-reports/
+          if-no-files-found: ignore
+
+      # a release is only made when the version in gradle.properties has no tag yet
+      - name: release new version
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION: ${{ steps.version.outputs.mod_version }}
+        run: |
+          if git rev-parse -q --verify "refs/tags/$VERSION" >/dev/null; then
+            echo "Tag $VERSION already exists, skipping release"
+            exit 0
+          fi
+          gh release create "$VERSION" build/libs/"$VERSION"/*.jar \
+            --target "$GITHUB_SHA" \
+            --title "Polym $VERSION" \
+            --generate-notes

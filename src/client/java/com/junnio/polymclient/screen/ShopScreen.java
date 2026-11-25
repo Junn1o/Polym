@@ -1,8 +1,8 @@
 package com.junnio.polymclient.screen;
 
 import com.junnio.polym.net.shop.ShopOfferViewData;
+import com.junnio.polym.screen.SellerScreenHandler;
 import com.junnio.polym.screen.ShopScreenHandler;
-import com.mojang.blaze3d.platform.cursor.CursorTypes;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.client.Minecraft;
@@ -11,19 +11,25 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import net.minecraft.client.gui.screens.inventory.tooltip.ClientTextTooltip;
 import net.minecraft.client.gui.screens.inventory.tooltip.ClientTooltipComponent;
+import net.minecraft.client.gui.screens.inventory.tooltip.ClientTooltipPositioner;
 import net.minecraft.client.gui.screens.inventory.tooltip.DefaultTooltipPositioner;
+//? if >=1.21.9 {
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.input.MouseButtonEvent;
+//?}
 import net.minecraft.client.multiplayer.PlayerInfo;
-import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
+import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.Nullable;
+import org.joml.Vector2i;
+import org.joml.Vector2ic;
 
 import java.text.Normalizer;
 import java.util.ArrayList;
@@ -52,10 +58,12 @@ public class ShopScreen extends AbstractContainerScreen<ShopScreenHandler> {
     private static final int ROW_W = 88;
     private static final int ITEM_Y_OFF = 2;
 
-    private static final int ITEM_X0 = 11;
-    private static final int BUY_B_DX = 18;
-    private static final int SELL_DX = 18 + 18 + 24;
-    private static final float ITEM_SCALE = 0.75f;
+    private static final int ITEM_X0 = 8;
+    private static final int BUY_B_DX = 13;
+    private static final int BUY_C_DX = 26;
+    private static final int SELL_DX = 18 + 16 + 22;
+    private static final int SELL_DX_B = 18 + 16 + 35;
+    private static final float ITEM_SCALE = 0.5f;
     private static final float ITEM_OFF = (16f - 16f * ITEM_SCALE) / 2f;
     private final List<ShopOfferViewData> offersView = new ArrayList<>();
     private EditBox searchBox;
@@ -63,6 +71,11 @@ public class ShopScreen extends AbstractContainerScreen<ShopScreenHandler> {
     private final List<ShopOfferViewData> allOffers = new ArrayList<>();
     @Nullable
     private ShopOfferViewData previewOffer = null;
+    @Nullable private ItemStack previewTooltipStack = null;
+    private ItemStack cachedTooltipKey = ItemStack.EMPTY;
+    private List<ClientTooltipComponent> cachedTooltip = List.of();
+    @Nullable private UUID cachedOwnerUuid = null;
+    @Nullable private OwnerTooltip cachedOwnerTooltip = null;
     public ShopScreen(ShopScreenHandler handler, Inventory inv, Component title) {
         super(handler, inv, title);
         this.imageWidth = 276;
@@ -85,6 +98,7 @@ public class ShopScreen extends AbstractContainerScreen<ShopScreenHandler> {
 
                 if (idx >= 0 && idx < this.offersView.size()) {
                     this.previewOffer = this.offersView.get(idx);
+                    invalidateTooltipCache();
                 } else {
                     this.previewOffer = null;
                 }
@@ -105,6 +119,10 @@ public class ShopScreen extends AbstractContainerScreen<ShopScreenHandler> {
         this.addRenderableWidget(this.searchBox);
         if (this.searchBox != null) this.searchBox.setFocused(false);
         this.setFocused(null);
+    }
+    private void invalidateTooltipCache() {
+        this.cachedTooltipKey = ItemStack.EMPTY;
+        this.cachedTooltip = List.of();
     }
     @Nullable
     private ShopOfferViewData getHoveredOffer(int mouseX, int mouseY) {
@@ -134,15 +152,12 @@ public class ShopScreen extends AbstractContainerScreen<ShopScreenHandler> {
         PlayerInfo info = getPlayerInfo(ownerUuid);
         if (info == null) return;
 
-        Identifier skin = info.getSkin().body().texturePath();
-        var pose = g.pose();
-        pose.pushMatrix();
-        pose.translate(x, y);
-        pose.scale(1.0f, 1.0f);
-        g.blit(RenderPipelines.GUI_TEXTURED, skin, 0, 0, 8.0f, 8.0f, 8, 8, 64, 64);
-        g.blit(RenderPipelines.GUI_TEXTURED, skin, 0, 0, 40.0f, 8.0f, 8, 8, 64, 64);
+        Identifier skin = GuiCompat.skin(info);
+        GuiCompat.pushTransform(g, x, y, 1.0f);
+        GuiCompat.blit(g, skin, 0, 0, 8.0f, 8.0f, 8, 8, 64, 64);
+        GuiCompat.blit(g, skin, 0, 0, 40.0f, 8.0f, 8, 8, 64, 64);
 
-        pose.popMatrix();
+        GuiCompat.popTransform(g);
     }
     private void updateOfferButtons() {
         for (int i = 0; i < 7; i++) {
@@ -175,7 +190,9 @@ public class ShopScreen extends AbstractContainerScreen<ShopScreenHandler> {
 
             int xBuyA = left + ITEM_X0;
             int xBuyB = xBuyA + BUY_B_DX;
+            int xBuyC = xBuyA + BUY_C_DX;
             int xSell = xBuyA + SELL_DX;
+            int xSellB = xBuyA + SELL_DX_B;
             if (idx == this.selected) {
                 g.fill(rowX, yRow - 1, rowX + ROW_W, yRow - 1 + ROW_H, 0x66FFFFFF);
             }
@@ -186,36 +203,67 @@ public class ShopScreen extends AbstractContainerScreen<ShopScreenHandler> {
             if (!o.buyB().isEmpty()) {
                 renderScaledFakeItem(g, o.buyB(), xBuyB, yItem, ITEM_SCALE, ITEM_OFF);
             }
+            if (!o.buyC().isEmpty()) {
+                renderScaledFakeItem(g, o.buyC(), xBuyC, yItem, ITEM_SCALE, ITEM_OFF);
+            }
             renderScaledFakeItem(g, o.sell(), xSell, yItem, ITEM_SCALE, ITEM_OFF);
+            if (!o.sellB().isEmpty()) {
+                renderScaledFakeItem(g, o.sellB(), xSellB, yItem, ITEM_SCALE, ITEM_OFF);
+            }
             this.renderButtonArrows(g, this.leftPos, yRow +2);
         }
         this.renderScroller(g, mouseX, mouseY);
         if (this.previewOffer != null) {
-            ItemStack realA = this.menu.getSlot(ShopScreenHandler.SLOT_BUY_A).getItem();
-            ItemStack realB = this.menu.getSlot(ShopScreenHandler.SLOT_BUY_B).getItem();
-            ItemStack realS = this.menu.getSlot(ShopScreenHandler.SLOT_SELL).getItem();
+            this.previewTooltipStack = null;
+            ItemStack realA = this.menu.getSlot(SellerScreenHandler.SLOT_BUY_A).getItem();
+            ItemStack realB = this.menu.getSlot(SellerScreenHandler.SLOT_BUY_B).getItem();
+            ItemStack realC = this.menu.getSlot(SellerScreenHandler.SLOT_BUY_C).getItem();
+            ItemStack realS = this.menu.getSlot(SellerScreenHandler.SLOT_SELL).getItem();
+            ItemStack realSB = this.menu.getSlot(SellerScreenHandler.SLOT_SELL_B).getItem();
 
             boolean emptyA = realA.isEmpty();
             boolean emptyB = realB.isEmpty();
+            boolean emptyC = realC.isEmpty();
             boolean emptyS = realS.isEmpty();
-            int px = this.leftPos + 136;
+            boolean emptySB = realSB.isEmpty();
+            int px = this.leftPos + 110;
             int py = this.topPos + 37;
 
+            int xA  = px;
+            int xB  = px + 26;
+            int xC  = px + 52;
+            int xS  = px + 110;
+            int xSB = px + 136;
             ItemStack a = previewOffer.offer().buyA();
             ItemStack b = previewOffer.offer().buyB();
+            ItemStack c = previewOffer.offer().buyC();
             ItemStack s = previewOffer.offer().sell();
+            ItemStack sb = previewOffer.offer().sellB();
 
             if (emptyA) {
-                g.renderFakeItem(a, px, py);
-                g.renderItemDecorations(this.font, a, px, py);
+                if (mouseX >= xA && mouseX < xA + 16 && mouseY >= py && mouseY < py + 16) this.previewTooltipStack = a;
+                g.renderFakeItem(a, xA, py);
+                g.renderItemDecorations(this.font, a, xA, py);
             }
             if (emptyB && !b.isEmpty()) {
-                g.renderFakeItem(b, px + 26, py);
-                g.renderItemDecorations(this.font, b, px + 26, py);
+                if (mouseX >= xB && mouseX < xB + 16 && mouseY >= py && mouseY < py + 16) this.previewTooltipStack = b;
+                g.renderFakeItem(b, xB, py);
+                g.renderItemDecorations(this.font, b, xB, py);
+            }
+            if (emptyC && !c.isEmpty()) {
+                if (mouseX >= xC && mouseX < xC + 16 && mouseY >= py && mouseY < py + 16) this.previewTooltipStack = c;
+                g.renderFakeItem(c, xC, py);
+                g.renderItemDecorations(this.font, c, xC, py);
             }
             if (emptyS) {
-                g.renderFakeItem(s, px + 26 + 58, py);
-                g.renderItemDecorations(this.font, s, px + 26 + 58, py);
+                if (mouseX >= xS && mouseX < xS + 16 && mouseY >= py && mouseY < py + 16) this.previewTooltipStack = s;
+                g.renderFakeItem(s, xS, py);
+                g.renderItemDecorations(this.font, s, xS, py);
+            }
+            if (emptySB && !sb.isEmpty()) {
+                if (mouseX >= xSB && mouseX < xSB + 16 && mouseY >= py && mouseY < py + 16) this.previewTooltipStack = sb;
+                g.renderFakeItem(sb, xSB, py);
+                g.renderItemDecorations(this.font, sb, xSB, py);
             }
             int hx = this.leftPos + this.imageWidth - 16 - 6;
             int hy = this.topPos + 6;
@@ -234,25 +282,19 @@ public class ShopScreen extends AbstractContainerScreen<ShopScreenHandler> {
 
                 int ty = hy + (16 - (int)(this.font.lineHeight * scale)) / 2;
                 ty -= 3;
-                var pose = g.pose();
-                pose.pushMatrix();
-                pose.translate(tx, ty);
-                pose.scale(scale, scale);
+                GuiCompat.pushTransform(g, tx, ty, scale);
                 g.drawString(this.font, name, 0, 0, 0xFFFFFFFF, true);
-                pose.popMatrix();
+                GuiCompat.popTransform(g);
             }
         }
         ShopOfferViewData hovered = getHoveredOffer(mouseX, mouseY);
         if (hovered != null) {
-            var comp = new OwnerTooltip(hovered.ownerUuid(), hovered.ownerName());
-            g.renderTooltip(
-                    this.font,
-                    List.of(comp),
-                    mouseX,
-                    mouseY,
-                    DefaultTooltipPositioner.INSTANCE,
-                    null
-            );
+            UUID u = hovered.ownerUuid();
+            if (cachedOwnerTooltip == null || cachedOwnerUuid == null || !cachedOwnerUuid.equals(u)) {
+                cachedOwnerUuid = u;
+                cachedOwnerTooltip = new OwnerTooltip(u, hovered.ownerName());
+            }
+            GuiCompat.tooltip(g, this.font, List.of(cachedOwnerTooltip), mouseX, mouseY);
         }
         String q = this.searchBox != null ? this.searchBox.getValue() : "";
         if (!q.equals(this.lastQuery)) {
@@ -260,20 +302,54 @@ public class ShopScreen extends AbstractContainerScreen<ShopScreenHandler> {
             applyFilter(q);
         }
         renderSearchIcon(g, this.leftPos + 105, this.topPos + 4);
+        if (this.previewTooltipStack != null && !this.previewTooltipStack.isEmpty()) {
+            renderItemTooltipTextOnly(g, this.previewTooltipStack, mouseX, mouseY);
+        }
         this.renderTooltip(g, mouseX, mouseY);
     }
-    private void renderSearchIcon(GuiGraphics guiGraphics, int baseX, int rowY) {
-        guiGraphics.blitSprite(RenderPipelines.GUI_TEXTURED, SEARCH_SPRITE, baseX, rowY, 12, 12);
+    private void renderItemTooltipTextOnly(GuiGraphics g, ItemStack stack, int mouseX, int mouseY) {
+        if (stack == null || stack.isEmpty()) return;
+
+        ItemStack key = stack.copy();
+        key.setCount(1);
+
+        if (cachedTooltipKey.isEmpty() || !ItemStack.isSameItemSameComponents(key, cachedTooltipKey)) {
+            cachedTooltipKey = key;
+            cachedTooltip = buildTooltipComponents(stack);
+        }
+
+        GuiCompat.tooltip(g, this.font, cachedTooltip, mouseX, mouseY);
     }
-    public void setOffersFromServer(List<ShopOfferViewData> offers) {
-        allOffers.clear();
-        allOffers.addAll(offers);
-        applyFilter(this.searchBox != null ? this.searchBox.getValue() : "");
+    private List<ClientTooltipComponent> buildTooltipComponents(ItemStack stack) {
+        var mc = Minecraft.getInstance();
+        var player = mc.player;
+        if (player == null) return List.of();
+
+        var ctx = net.minecraft.world.item.Item.TooltipContext.of(player.level());
+        var flag = mc.options.advancedItemTooltips
+                ? net.minecraft.world.item.TooltipFlag.ADVANCED
+                : net.minecraft.world.item.TooltipFlag.NORMAL;
+
+        List<Component> lines = stack.getTooltipLines(ctx, player, flag);
+
+        int maxWidth = 240;
+        List<ClientTooltipComponent> comps = new ArrayList<>(lines.size());
+
+        for (Component c : lines) {
+            List<FormattedCharSequence> baked = this.font.split(c, maxWidth);
+            for (FormattedCharSequence seq : baked) {
+                comps.add(new ClientTextTooltip(seq));
+            }
+        }
+        return comps;
+    }
+    private void renderSearchIcon(GuiGraphics guiGraphics, int baseX, int rowY) {
+        GuiCompat.blitSprite(guiGraphics, SEARCH_SPRITE, baseX, rowY, 12, 12);
     }
     private static String fold(String s) {
         if (s == null) return "";
         String n = Normalizer.normalize(s, Normalizer.Form.NFD);
-        n = n.replaceAll("\\p{M}+", ""); // bỏ dấu
+        n = n.replaceAll("\\p{M}+", "");
         n = n.replace('đ', 'd').replace('Đ', 'D');
         return n.toLowerCase();
     }
@@ -290,17 +366,9 @@ public class ShopScreen extends AbstractContainerScreen<ShopScreenHandler> {
         offersView.clear();
 
         for (ShopOfferViewData view : allOffers) {
-            ItemStack sell = view.offer().sell();
-            if (sell == null || sell.isEmpty()) continue;
-            String id = "";
-            var key = net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(sell.getItem());
-            if (key != null) id = key.toString();
-            String name = sell.getHoverName().getString();
+            var offer = view.offer();
 
-            String hay1 = fold(id);
-            String hay2 = fold(name);
-
-            boolean ok = hay1.contains(q) || hay2.contains(q);
+            boolean ok = matchesStack(offer.sell(), q) || matchesStack(offer.sellB(), q);
             if (ok) offersView.add(view);
         }
         this.scrollOff = 0;
@@ -309,33 +377,40 @@ public class ShopScreen extends AbstractContainerScreen<ShopScreenHandler> {
 
         updateOfferButtons();
     }
+    private boolean matchesStack(ItemStack stack, String q) {
+        if (stack == null || stack.isEmpty()) return false;
+
+        String id = "";
+        var key = net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(stack.getItem());
+        if (key != null) id = key.toString();
+
+        String name = stack.getHoverName().getString();
+        return fold(id).contains(q) || fold(name).contains(q);
+    }
     private void renderScaledFakeItem(GuiGraphics g, ItemStack stack, int x, int y, float scale, float itemoff) {
         if (stack.isEmpty()) return;
 
-        var m = g.pose();
-        m.pushMatrix();
-        m.translate(x + itemoff, y + itemoff);
-        m.scale(scale, scale);
+        GuiCompat.pushTransform(g, x + itemoff, y + itemoff, scale);
 
         g.renderFakeItem(stack, 0, 0);
         g.renderItemDecorations(this.font, stack, 0, 0);
 
-        m.popMatrix();
+        GuiCompat.popTransform(g);
     }
     private void renderButtonArrows(GuiGraphics guiGraphics, int baseX, int rowY) {
-        guiGraphics.blitSprite(RenderPipelines.GUI_TEXTURED, TRADE_ARROW_SPRITE, baseX + 5 + 35 + 20, rowY + 3, 10, 9);
+        GuiCompat.blitSprite(guiGraphics, TRADE_ARROW_SPRITE, baseX + 5 + 30 + 20, rowY + 3, 10, 9);
     }
     private void renderScroller(GuiGraphics g, int mouseX, int mouseY) {
         int sx = this.leftPos + SCROLL_X;
         int syBase = this.topPos + SCROLL_Y;
         if (canScroll()){
             int sy = syBase + scrollerY();
-            g.blitSprite(RenderPipelines.GUI_TEXTURED, SCROLLER_SPRITE, sx, sy, KNOB_W, KNOB_H);
+            GuiCompat.blitSprite(g, SCROLLER_SPRITE, sx, sy, KNOB_W, KNOB_H);
             if (mouseX >= sx && mouseX < sx + KNOB_W && mouseY >= sy && mouseY <= sy + KNOB_H) {
-                g.requestCursor(this.draggingScroller ? CursorTypes.RESIZE_NS : CursorTypes.POINTING_HAND);
+                GuiCompat.scrollerCursor(g, this.draggingScroller);
             }
         } else{
-            g.blitSprite(RenderPipelines.GUI_TEXTURED, SCROLLER_DISABLED_SPRITE, sx, syBase, KNOB_W, KNOB_H);
+            GuiCompat.blitSprite(g, SCROLLER_DISABLED_SPRITE, sx, syBase, KNOB_W, KNOB_H);
         }
     }
     private boolean canScroll() {
@@ -371,69 +446,114 @@ public class ShopScreen extends AbstractContainerScreen<ShopScreenHandler> {
         return true;
     }
 
-    @Override
-    public boolean mouseDragged(MouseButtonEvent mouseButtonEvent, double d, double e) {
+    private boolean onMouseDragged(double mouseY) {
         if (this.draggingScroller && canScroll()) {
             int i = this.offersView.size();
             int j = this.topPos + SCROLL_Y;
             int k = j + TRACK_H;
             int l = i - 7;
 
-            float f = ((float)mouseButtonEvent.y() - (float)j - (KNOB_H / 2.0f)) / ((float)(k - j) - (float)KNOB_H);
+            float f = ((float)mouseY - (float)j - (KNOB_H / 2.0f)) / ((float)(k - j) - (float)KNOB_H);
             f = f * (float)l + 0.5f;
             this.scrollOff = Mth.clamp((int)f, 0, l);
 
             updateOfferButtons();
             return true;
         }
-        return super.mouseDragged(mouseButtonEvent, d, e);
+        return false;
+    }
+
+    private boolean onMouseReleased(int button) {
+        if (button==0 && this.draggingScroller) {
+            this.draggingScroller = false;
+            return true;
+        }
+        return false;
+    }
+
+    private boolean isSearchFocused() {
+        return this.searchBox != null && this.searchBox.isFocused();
+    }
+
+    // only called while the search box is focused
+    private boolean onSearchKey(int key, boolean handledByBox, boolean isInventoryKey) {
+        if (handledByBox || isInventoryKey) {
+            return true;
+        }
+        if (key == org.lwjgl.glfw.GLFW.GLFW_KEY_ESCAPE) {
+            this.searchBox.setFocused(false);
+            this.setFocused(null);
+            return true;
+        }
+        return false;
+    }
+
+    private boolean onMouseClicked(double mouseX, double mouseY, int button) {
+        if (button==0 && canScroll() && isMouseOverScrollTrack(mouseX, mouseY)) {
+            this.draggingScroller = true;
+            setScrollOffFromMouseY(mouseY);
+            return true;
+        }
+        if (this.searchBox != null) {
+            boolean inside = this.searchBox.isMouseOver(mouseX, mouseY);
+            if (!inside) {
+                this.searchBox.setFocused(false);
+                this.setFocused(null);
+            }
+        }
+        return false;
+    }
+
+    //? if >=1.21.9 {
+    @Override
+    public boolean mouseDragged(MouseButtonEvent mouseButtonEvent, double d, double e) {
+        return onMouseDragged(mouseButtonEvent.y()) || super.mouseDragged(mouseButtonEvent, d, e);
     }
 
     @Override
     public boolean mouseReleased(MouseButtonEvent mouseButtonEvent) {
-        if (mouseButtonEvent.button()==0 && this.draggingScroller) {
-            this.draggingScroller = false;
-            return true;
-        }
-        return super.mouseReleased(mouseButtonEvent);
+        return onMouseReleased(mouseButtonEvent.button()) || super.mouseReleased(mouseButtonEvent);
     }
 
     @Override
     public boolean keyPressed(KeyEvent keyEvent) {
-        if (this.searchBox != null && this.searchBox.isFocused()) {
-            if (this.searchBox.keyPressed(keyEvent)) {
-                return true;
-            }
-            var invKey = Minecraft.getInstance().options.keyInventory;
-            if (invKey.matches(keyEvent)) {
-                return true;
-            }
-            var keyCode = org.lwjgl.glfw.GLFW.GLFW_KEY_ESCAPE;
-            if (keyEvent.key() == keyCode) {
-                this.searchBox.setFocused(false);
-                this.setFocused(null);
-                return true;
-            }
+        if (isSearchFocused() && onSearchKey(keyEvent.key(), this.searchBox.keyPressed(keyEvent),
+                Minecraft.getInstance().options.keyInventory.matches(keyEvent))) {
+            return true;
         }
         return super.keyPressed(keyEvent);
     }
 
     @Override
     public boolean mouseClicked(MouseButtonEvent mouseButtonEvent, boolean bl) {
-        if (mouseButtonEvent.button()==0 && canScroll() && isMouseOverScrollTrack(mouseButtonEvent.x(), mouseButtonEvent.y())) {
-            this.draggingScroller = true;
-            setScrollOffFromMouseY(mouseButtonEvent.y());
+        return onMouseClicked(mouseButtonEvent.x(), mouseButtonEvent.y(), mouseButtonEvent.button())
+                || super.mouseClicked(mouseButtonEvent, bl);
+    }
+    //?} else {
+    /*@Override
+    public boolean mouseDragged(double mouseX, double mouseY, int button, double d, double e) {
+        return onMouseDragged(mouseY) || super.mouseDragged(mouseX, mouseY, button, d, e);
+    }
+
+    @Override
+    public boolean mouseReleased(double mouseX, double mouseY, int button) {
+        return onMouseReleased(button) || super.mouseReleased(mouseX, mouseY, button);
+    }
+
+    @Override
+    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+        if (isSearchFocused() && onSearchKey(keyCode, this.searchBox.keyPressed(keyCode, scanCode, modifiers),
+                Minecraft.getInstance().options.keyInventory.matches(keyCode, scanCode))) {
             return true;
         }
-        if (this.searchBox != null) {
-            boolean inside = this.searchBox.isMouseOver(mouseButtonEvent.x(), mouseButtonEvent.y());
-            if (!inside) {
-                this.searchBox.setFocused(false);
-                this.setFocused(null);
-            }
-        }
-        return super.mouseClicked(mouseButtonEvent, bl);
+        return super.keyPressed(keyCode, scanCode, modifiers);
     }
+
+    @Override
+    public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        return onMouseClicked(mouseX, mouseY, button) || super.mouseClicked(mouseX, mouseY, button);
+    }
+    *///?}
 
     private int scrollerY() {
         int total = offersView.size();
@@ -452,14 +572,19 @@ public class ShopScreen extends AbstractContainerScreen<ShopScreenHandler> {
     protected void renderBg(GuiGraphics g, float f, int i, int j) {
         int k = (this.width - this.imageWidth) / 2;
         int l = (this.height - this.imageHeight) / 2;
-        g.blit(RenderPipelines.GUI_TEXTURED, BG, k, l, 0, 0, this.imageWidth, this.imageHeight, 512, 256);
+        GuiCompat.blit(g, BG, k, l, 0, 0, this.imageWidth, this.imageHeight, 512, 256);
     }
     @Environment(EnvType.CLIENT)
+    //? if >=1.21.11 {
     class OfferButton extends Button.Plain {
+    //?} else
+    /*class OfferButton extends Button {*/
         final int rowIndex;
 
         OfferButton(int x, int y, int rowIndex, Button.OnPress onPress) {
             super(x, y, 88, 20, CommonComponents.EMPTY, onPress, DEFAULT_NARRATION);
+            cachedTooltipKey = ItemStack.EMPTY;
+            cachedTooltip = List.of();
             this.rowIndex = rowIndex;
         }
     }
@@ -490,11 +615,19 @@ public class ShopScreen extends AbstractContainerScreen<ShopScreenHandler> {
             return ICON;
         }
 
+        //? if >=1.21.6 {
         @Override
         public void renderText(GuiGraphics g, Font font, int x, int y) {
             int ty = y + (ICON - font.lineHeight) / 2;
             g.drawString(font, fitted, x + ICON + GAP, ty, 0xFFFFFFFF, true);
         }
+        //?} else {
+        /*@Override
+        public void renderText(Font font, int x, int y, org.joml.Matrix4f matrix, net.minecraft.client.renderer.MultiBufferSource.BufferSource buffer) {
+            int ty = y + (ICON - font.lineHeight) / 2;
+            font.drawInBatch(fitted, x + ICON + GAP, ty, 0xFFFFFFFF, true, matrix, buffer, Font.DisplayMode.NORMAL, 0, 0xF000F0);
+        }
+        *///?}
 
         @Override
         public void renderImage(Font font, int x, int y, int width, int height, GuiGraphics g) {
@@ -506,17 +639,14 @@ public class ShopScreen extends AbstractContainerScreen<ShopScreenHandler> {
                 return;
             }
 
-            Identifier skin = info.getSkin().body().texturePath();
+            Identifier skin = GuiCompat.skin(info);
 
-            var pose = g.pose();
-            pose.pushMatrix();
-            pose.translate(x, y);
-            pose.scale(1.0f, 1.0f);
+            GuiCompat.pushTransform(g, x, y, 1.0f);
 
-            g.blit(RenderPipelines.GUI_TEXTURED, skin, 0, 0, 8.0f, 8.0f, 8, 8, 64, 64);
-            g.blit(RenderPipelines.GUI_TEXTURED, skin, 0, 0, 40.0f, 8.0f, 8, 8, 64, 64);
+            GuiCompat.blit(g, skin, 0, 0, 8.0f, 8.0f, 8, 8, 64, 64);
+            GuiCompat.blit(g, skin, 0, 0, 40.0f, 8.0f, 8, 8, 64, 64);
 
-            pose.popMatrix();
+            GuiCompat.popTransform(g);
         }
     }
 }

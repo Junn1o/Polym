@@ -10,7 +10,10 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+//? if >=1.21.6 {
 import net.minecraft.client.renderer.RenderPipelines;
+//?} else
+/*import net.minecraft.client.renderer.RenderType;*/
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.player.Inventory;
@@ -29,40 +32,40 @@ public class PolymTableScreen extends AbstractContainerScreen<PolymTableScreenHa
     @Override
     protected void init() {
         super.init();
-        int top = this.topPos + 4;
-        int right  = this.leftPos + this.imageWidth;
-        assert Minecraft.getInstance().player != null;
-        UUID uuid = Minecraft.getInstance().player.getUUID();
-        this.addRenderableWidget(
-                Button.builder(Component.literal("+"), btn -> {
-                    var player = Minecraft.getInstance().player;
-                    if (player != null && player.containerMenu != null) {
-                        ItemStack carried = player.containerMenu.getCarried();
-                        if (!carried.isEmpty()) {
-                            if (!player.getInventory().add(carried.copy())) {
-                                player.drop(carried.copy(), false);
-                            }
-                            player.containerMenu.setCarried(ItemStack.EMPTY);
-                        }
-                    }
-                    ClientPlayNetworking.send(new OpenAllShopsPayload());
-                }).bounds(right, top, 16, 16).build()
-        );
-        this.addRenderableWidget(
-                Button.builder(Component.literal("-"), btn -> {
-                    var player = Minecraft.getInstance().player;
-                    if (player != null && player.containerMenu != null) {
-                        ItemStack carried = player.containerMenu.getCarried();
-                        if (!carried.isEmpty()) {
-                            if (!player.getInventory().add(carried.copy())) {
-                                player.drop(carried.copy(), false);
-                            }
-                            player.containerMenu.setCarried(ItemStack.EMPTY);
-                        }
-                    }
-                    ClientPlayNetworking.send(new OpenShopByOwnerPayload(uuid));
-                }).bounds(right, top+20, 16, 16).build()
-        );
+//        int top = this.topPos + 4;
+//        int right  = this.leftPos + this.imageWidth;
+//        assert Minecraft.getInstance().player != null;
+//        UUID uuid = Minecraft.getInstance().player.getUUID();
+//        this.addRenderableWidget(
+//                Button.builder(Component.literal("+"), btn -> {
+//                    var player = Minecraft.getInstance().player;
+//                    if (player != null && player.containerMenu != null) {
+//                        ItemStack carried = player.containerMenu.getCarried();
+//                        if (!carried.isEmpty()) {
+//                            if (!player.getInventory().add(carried.copy())) {
+//                                player.drop(carried.copy(), false);
+//                            }
+//                            player.containerMenu.setCarried(ItemStack.EMPTY);
+//                        }
+//                    }
+//                    ClientPlayNetworking.send(new OpenAllShopsPayload());
+//                }).bounds(right, top, 16, 16).build()
+//        );
+//        this.addRenderableWidget(
+//                Button.builder(Component.literal("-"), btn -> {
+//                    var player = Minecraft.getInstance().player;
+//                    if (player != null && player.containerMenu != null) {
+//                        ItemStack carried = player.containerMenu.getCarried();
+//                        if (!carried.isEmpty()) {
+//                            if (!player.getInventory().add(carried.copy())) {
+//                                player.drop(carried.copy(), false);
+//                            }
+//                            player.containerMenu.setCarried(ItemStack.EMPTY);
+//                        }
+//                    }
+//                    ClientPlayNetworking.send(new OpenShopByOwnerPayload(uuid));
+//                }).bounds(right, top+20, 16, 16).build()
+//        );
     }
 
     @Override
@@ -73,6 +76,9 @@ public class PolymTableScreen extends AbstractContainerScreen<PolymTableScreenHa
 
     @Override
     protected void renderBg(GuiGraphics context, float delta, int mouseX, int mouseY) {
+        //? if >=1.21.6 {
         context.blit(RenderPipelines.GUI_TEXTURED, TEXTURE,this.leftPos, this.topPos, 0F, 0F, this.imageWidth, this.imageHeight,256,256);
+        //?} else
+        /*context.blit(RenderType::guiTextured, TEXTURE, this.leftPos, this.topPos, 0F, 0F, this.imageWidth, this.imageHeight, 256, 256);*/
     }
 }

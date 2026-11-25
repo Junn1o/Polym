@@ -1,8 +1,12 @@
 package com.junnio.polym.screen;
 
+import com.junnio.polym.command.ModCommand;
 import com.junnio.polym.recipe.ModRecipes;
 import com.junnio.polym.recipe.PolymRecipe;
 import com.junnio.polym.sound.ModSounds;
+import com.junnio.polym.util.CraftAuditLogger;
+import net.minecraft.core.NonNullList;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.Container;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
@@ -14,16 +18,18 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.CraftingInput;
 import net.minecraft.world.item.crafting.CraftingRecipe;
 import net.minecraft.world.item.crafting.RecipeHolder;
+import net.minecraft.world.item.crafting.RecipeManager;
 import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.level.Level;
-
-import java.util.Optional;
 
 public class PolymTableScreenHandler extends AbstractContainerMenu {
     private final Level world;
     private final TransientCraftingContainer craftingInventory;
     private final Container resultInventory;
     private final Player playerentity;
+    private RecipeHolder<PolymRecipe> currentPolymRecipe;
+    private RecipeHolder<CraftingRecipe> currentVanillaRecipe;
+
     public PolymTableScreenHandler(int syncId, Inventory playerInventory, Player playerentity) {
         super(ModScreenHandlers.POLYM_TABLE_SCREEN_HANDLER, syncId);
 
@@ -40,7 +46,13 @@ public class PolymTableScreenHandler extends AbstractContainerMenu {
                 if (player.level().isClientSide()) {
                     player.playSound(ModSounds.POLYM_ON_CRAFT, 1.0F, 1.0F);
                 }
-                consumeIngredients();
+                if (player instanceof ServerPlayer sp && currentPolymRecipe != null) {
+                    ItemStack resultToLog = currentPolymRecipe.value()
+                            .assemble(craftingInventory.asCraftInput(), world.registryAccess());
+                    CraftAuditLogger.logPolymCraft(sp, currentPolymRecipe.id().identifier(), resultToLog);
+                }
+
+                consumeIngredients(player);
                 updateRecipeOutput();
                 super.onTake(player, stack);
             }
@@ -67,7 +79,13 @@ public class PolymTableScreenHandler extends AbstractContainerMenu {
         }
 
     }
-    private void consumeIngredients() {
+    private void consumeIngredients(Player player) {
+        RecipeHolder<CraftingRecipe> vanilla = currentVanillaRecipe;
+        CraftingInput.Positioned positioned = craftingInventory.asPositionedCraftInput();
+        NonNullList<ItemStack> remainders = vanilla == null
+                ? null
+                : vanilla.value().getRemainingItems(positioned.input());
+
         for (int i = 0; i < craftingInventory.getContainerSize(); i++) {
             ItemStack slotStack = craftingInventory.getItem(i);
 
@@ -77,6 +95,25 @@ public class PolymTableScreenHandler extends AbstractContainerMenu {
 
                 if (slotStack.getCount() == 0) {
                     craftingInventory.setItem(i, ItemStack.EMPTY);
+                }
+            }
+        }
+
+        if (remainders != null) {
+            int width = positioned.input().width();
+            for (int i = 0; i < remainders.size(); i++) {
+                ItemStack remainder = remainders.get(i);
+                if (remainder.isEmpty()) continue;
+
+                int slot = (i % width + positioned.left()) + (i / width + positioned.top()) * craftingInventory.getWidth();
+                ItemStack current = craftingInventory.getItem(slot);
+                if (current.isEmpty()) {
+                    craftingInventory.setItem(slot, remainder);
+                } else if (ItemStack.isSameItemSameComponents(current, remainder)) {
+                    remainder.grow(current.getCount());
+                    craftingInventory.setItem(slot, remainder);
+                } else if (!player.getInventory().add(remainder)) {
+                    player.drop(remainder, false);
                 }
             }
         }
@@ -134,12 +171,13 @@ public class PolymTableScreenHandler extends AbstractContainerMenu {
     @Override
     public void removed(Player player) {
         super.removed(player);
-        for (int i = 0; i < craftingInventory.getContainerSize(); i++) {
-            ItemStack itemStack = craftingInventory.removeItemNoUpdate(i);
-            if (!itemStack.isEmpty()) {
-                player.getInventory().add(itemStack);
-                if (!itemStack.isEmpty()) {
-                    player.drop(itemStack, false);
+        if (!player.level().isClientSide()) {
+            for (int i = 0; i < craftingInventory.getContainerSize(); i++) {
+                ItemStack stack = craftingInventory.removeItemNoUpdate(i);
+                if (!stack.isEmpty()) {
+                    if (!player.getInventory().add(stack)) {
+                        player.drop(stack, false);
+                    }
                 }
             }
         }
@@ -166,29 +204,35 @@ public class PolymTableScreenHandler extends AbstractContainerMenu {
 
     public void updateRecipeOutput() {
         if (!this.world.isClientSide()) {
+            this.currentPolymRecipe = null;
+            this.currentVanillaRecipe = null;
             CraftingInput recipeInput = craftingInventory.asCraftInput();
-            Optional<RecipeHolder<PolymRecipe>> polymRecipe = this.world.getServer()
-                    .getRecipeManager()
-                    .getRecipeFor(ModRecipes.POLYM_CRAFTING_TYPE, recipeInput, this.world);
+            if (recipeInput.isEmpty()) {
+                this.resultInventory.setItem(0, ItemStack.EMPTY);
+                return;
+            }
+            RecipeManager recipes = this.world.getServer().getRecipeManager();
+            var polymOpt = recipes.getRecipeFor(ModRecipes.POLYM_CRAFTING_TYPE, recipeInput, this.world);
 
-            if (polymRecipe.isPresent()) {
-                if(!playerentity.getTags().contains("Guild") && polymRecipe.get().id().identifier().getPath().startsWith("guild_"))
+            if (polymOpt.isPresent()) {
+                var holder = polymOpt.get();
+                if (!playerentity.getTags().contains(ModCommand.GUILD_TAG)
+                        && holder.id().identifier().getPath().startsWith("guild_")) {
+                    this.resultInventory.setItem(0, ItemStack.EMPTY);
                     return;
-                ItemStack result = polymRecipe.get().value().assemble(recipeInput, this.world.registryAccess());
-                this.resultInventory.setItem(0, result);
+                }
+                this.currentPolymRecipe = holder;
+                this.resultInventory.setItem(0, holder.value().assemble(recipeInput, this.world.registryAccess()));
                 return;
             }
 
-            Optional<RecipeHolder<CraftingRecipe>> vanillaRecipe = this.world.getServer()
-                    .getRecipeManager()
-                    .getRecipeFor(RecipeType.CRAFTING, recipeInput, this.world);
+            var vanillaOpt = recipes.getRecipeFor(RecipeType.CRAFTING, recipeInput, this.world);
 
-            if (vanillaRecipe.isPresent()) {
-                if (vanillaRecipe.get().id().identifier().getNamespace().equals("polym")) {
-                    ItemStack result = vanillaRecipe.get().value().assemble(recipeInput, this.world.registryAccess());
-                    this.resultInventory.setItem(0, result);
-                    return;
-                }
+            if (vanillaOpt.isPresent()) {
+                var holder = vanillaOpt.get();
+                this.currentVanillaRecipe = holder;
+                this.resultInventory.setItem(0, holder.value().assemble(recipeInput, this.world.registryAccess()));
+                return;
             }
             this.resultInventory.setItem(0, ItemStack.EMPTY);
         }

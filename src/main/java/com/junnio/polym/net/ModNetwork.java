@@ -8,6 +8,7 @@ import com.junnio.polym.net.shop.ShopOfferData;
 import com.junnio.polym.net.shop.ShopOfferViewData;
 import com.junnio.polym.screen.SellerScreenHandler;
 import com.junnio.polym.screen.ShopScreenHandler;
+import com.junnio.polym.util.SellerShopJsonStore;
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.fabricmc.fabric.api.screenhandler.v1.ExtendedScreenHandlerFactory;
@@ -50,7 +51,9 @@ public class ModNetwork {
                         .map(o -> new ShopOfferData(
                                 o.buyA() == null ? ItemStack.EMPTY : o.buyA(),
                                 o.buyB() == null ? ItemStack.EMPTY : o.buyB(),
-                                o.sell() == null ? ItemStack.EMPTY : o.sell()
+                                o.buyC() == null ? ItemStack.EMPTY : o.buyC(),
+                                o.sell() == null ? ItemStack.EMPTY : o.sell(),
+                                o.sellB() == null ? ItemStack.EMPTY : o.sellB()
                         ))
                         .toList();
 
@@ -76,7 +79,7 @@ public class ModNetwork {
                     @Override public AbstractContainerMenu createMenu(int syncId, Inventory inv, Player p) {
                         return new SellerScreenHandler(syncId, inv, p, openData);
                     }
-                    @Override public Component getDisplayName() { return Component.literal("Shop"); }
+                    @Override public Component getDisplayName() { return Component.translatable("container.seller"); }
                 });
             });
         });
@@ -119,7 +122,7 @@ public class ModNetwork {
                         return new ShopScreenHandler(syncId, inv, p, openData);
                     }
 
-                    @Override public Component getDisplayName() { return Component.literal("All Shops"); }
+                    @Override public Component getDisplayName() { return Component.translatable("container.shop"); }
                 });
             });
         });
