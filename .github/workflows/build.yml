@@ -1,6 +1,9 @@
 # Builds every supported Minecraft version (Stonecutter) and runs the gametests on
-# each push and pull request. On main, a new mod_version in gradle.properties is
-# released automatically as a GitHub release with one jar per Minecraft version.
+# each push to a branch. Pull requests from this repo reuse the checks of the pushed
+# commit; only pull requests from forks run their own. main is only reached through
+# already tested branches, so it skips the gametests and just builds; a new
+# mod_version in gradle.properties is then released as a GitHub release with one jar
+# per Minecraft version.
 #
 # Runner choice: pushes by the repo owner run on the self-hosted runner junnio-homelab
 # when it is online, everything else (pull requests, forks, runner offline) runs on GitHub.
@@ -8,13 +11,28 @@
 # "Administration: Read" on this repository. Without it GitHub runners are used.
 
 name: build
-on: [pull_request, push]
+on:
+  push:
+    paths-ignore:
+      - 'docs/**'
+      - '**.md'
+  pull_request:
+    paths-ignore:
+      - 'docs/**'
+      - '**.md'
 
 permissions:
   contents: write
 
+# a newer push to the same branch cancels the older run; main always finishes so releases are not cut off
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
 jobs:
   pick-runner:
+    # pull requests from this repo are already covered by the push run of the same commit
+    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name != github.repository
     runs-on: ubuntu-24.04
     outputs:
       runner: ${{ steps.pick.outputs.runner }}
@@ -92,8 +110,10 @@ jobs:
       - name: build all versions
         run: ./gradlew buildAndCollect
       - name: server gametests
+        if: github.ref != 'refs/heads/main'
         run: ./gradlew runGameTest
       - name: client gametests
+        if: github.ref != 'refs/heads/main'
         # xvfb defaults to an 8-bit screen, which cannot create an OpenGL context
         run: |
           xvfb-run -a -s "-screen 0 1920x1080x24" ./gradlew --no-parallel runClientGameTest
@@ -107,7 +127,7 @@ jobs:
           name: Artifacts
           path: build/libs/${{ steps.version.outputs.mod_version }}/
       - name: capture gametest screenshots
-        if: always()
+        if: always() && github.ref != 'refs/heads/main'
         uses: actions/upload-artifact@v4
         with:
           name: Screenshots
