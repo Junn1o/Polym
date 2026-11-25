@@ -3,6 +3,7 @@
 	"package": "com.junnio.mixin.client",
 	"compatibilityLevel": "JAVA_21",
 	"client": [
+		"GuiGraphicsInvoker",
 		"ItemEntityRendererMixin"
 	],
 	"injectors": {

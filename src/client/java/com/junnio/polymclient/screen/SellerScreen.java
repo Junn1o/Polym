@@ -6,7 +6,6 @@ import com.junnio.polym.net.seller.DeleteOfferPayload;
 import com.junnio.polym.net.seller.EditOfferPayload;
 import com.junnio.polym.net.seller.SaveSellerOffersPayload;
 import com.junnio.polym.screen.SellerScreenHandler;
-import com.mojang.blaze3d.platform.cursor.CursorTypes;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
@@ -18,8 +17,8 @@ import net.minecraft.client.gui.screens.inventory.tooltip.ClientTextTooltip;
 import net.minecraft.client.gui.screens.inventory.tooltip.ClientTooltipComponent;
 import net.minecraft.client.gui.screens.inventory.tooltip.ClientTooltipPositioner;
 import net.minecraft.client.gui.screens.inventory.tooltip.DefaultTooltipPositioner;
+//? if >=1.21.9
 import net.minecraft.client.input.MouseButtonEvent;
-import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
@@ -368,7 +367,7 @@ public class SellerScreen extends AbstractContainerScreen<SellerScreenHandler> {
             cachedTooltip = buildTooltipComponents(stack);
         }
 
-        g.renderTooltip(this.font, cachedTooltip, mouseX, mouseY, DefaultTooltipPositioner.INSTANCE, null);
+        GuiCompat.tooltip(g, this.font, cachedTooltip, mouseX, mouseY);
     }
     private List<ClientTooltipComponent> buildTooltipComponents(ItemStack stack) {
         var mc = Minecraft.getInstance();
@@ -396,30 +395,27 @@ public class SellerScreen extends AbstractContainerScreen<SellerScreenHandler> {
     private void renderScaledFakeItem(GuiGraphics g, ItemStack stack, int x, int y, float scale, float itemoff) {
         if (stack.isEmpty()) return;
 
-        var m = g.pose();
-        m.pushMatrix();
-        m.translate(x + itemoff, y + itemoff);
-        m.scale(scale, scale);
+        GuiCompat.pushTransform(g, x + itemoff, y + itemoff, scale);
 
         g.renderFakeItem(stack, 0, 0);
         g.renderItemDecorations(this.font, stack, 0, 0);
 
-        m.popMatrix();
+        GuiCompat.popTransform(g);
     }
     private void renderButtonArrows(GuiGraphics guiGraphics, int baseX, int rowY) {
-        guiGraphics.blitSprite(RenderPipelines.GUI_TEXTURED, TRADE_ARROW_SPRITE, baseX + 5 + 30 + 20, rowY + 3, 10, 9);
+        GuiCompat.blitSprite(guiGraphics, TRADE_ARROW_SPRITE, baseX + 5 + 30 + 20, rowY + 3, 10, 9);
     }
     private void renderScroller(GuiGraphics g, int mouseX, int mouseY) {
         int sx = this.leftPos + SCROLL_X;
         int syBase = this.topPos + SCROLL_Y;
         if (canScroll()){
             int sy = syBase + scrollerY();
-            g.blitSprite(RenderPipelines.GUI_TEXTURED, SCROLLER_SPRITE, sx, sy, KNOB_W, KNOB_H);
+            GuiCompat.blitSprite(g, SCROLLER_SPRITE, sx, sy, KNOB_W, KNOB_H);
             if (mouseX >= sx && mouseX < sx + KNOB_W && mouseY >= sy && mouseY <= sy + KNOB_H) {
-                g.requestCursor(this.draggingScroller ? CursorTypes.RESIZE_NS : CursorTypes.POINTING_HAND);
+                GuiCompat.scrollerCursor(g, this.draggingScroller);
             }
         } else{
-            g.blitSprite(RenderPipelines.GUI_TEXTURED, SCROLLER_DISABLED_SPRITE, sx, syBase, KNOB_W, KNOB_H);
+            GuiCompat.blitSprite(g, SCROLLER_DISABLED_SPRITE, sx, syBase, KNOB_W, KNOB_H);
         }
     }
     private boolean canScroll() {
@@ -457,15 +453,14 @@ public class SellerScreen extends AbstractContainerScreen<SellerScreenHandler> {
         return true;
     }
 
-    @Override
-    public boolean mouseDragged(MouseButtonEvent mouseButtonEvent, double d, double e) {
+    private boolean onMouseDragged(double mouseY) {
         if (this.draggingScroller && canScroll()) {
             int i = this.offersView.size();
             int j = this.topPos + SCROLL_Y;
             int k = j + TRACK_H;
             int l = i - 7;
 
-            float f = ((float)mouseButtonEvent.y() - (float)j - (KNOB_H / 2.0f)) / ((float)(k - j) - (float)KNOB_H);
+            float f = ((float)mouseY - (float)j - (KNOB_H / 2.0f)) / ((float)(k - j) - (float)KNOB_H);
             f = f * (float)l + 0.5f;
             this.scrollOff = Mth.clamp((int)f, 0, l);
 
@@ -473,27 +468,58 @@ public class SellerScreen extends AbstractContainerScreen<SellerScreenHandler> {
             updateActionButtons();
             return true;
         }
-        return super.mouseDragged(mouseButtonEvent, d, e);
+        return false;
+    }
+
+    private boolean onMouseReleased(int button) {
+        if (button==0 && this.draggingScroller) {
+            this.draggingScroller = false;
+            return true;
+        }
+        return false;
+    }
+
+    private boolean onMouseClicked(double mouseX, double mouseY, int button) {
+        if (button==0 && canScroll() && isMouseOverScrollTrack(mouseX, mouseY)) {
+            this.draggingScroller = true;
+            setScrollOffFromMouseY(mouseY);
+            return true;
+        }
+        return false;
+    }
+
+    //? if >=1.21.9 {
+    @Override
+    public boolean mouseDragged(MouseButtonEvent mouseButtonEvent, double d, double e) {
+        return onMouseDragged(mouseButtonEvent.y()) || super.mouseDragged(mouseButtonEvent, d, e);
     }
 
     @Override
     public boolean mouseReleased(MouseButtonEvent mouseButtonEvent) {
-        if (mouseButtonEvent.button()==0 && this.draggingScroller) {
-            this.draggingScroller = false;
-            return true;
-        }
-        return super.mouseReleased(mouseButtonEvent);
+        return onMouseReleased(mouseButtonEvent.button()) || super.mouseReleased(mouseButtonEvent);
     }
 
     @Override
     public boolean mouseClicked(MouseButtonEvent mouseButtonEvent, boolean bl) {
-        if (mouseButtonEvent.button()==0 && canScroll() && isMouseOverScrollTrack(mouseButtonEvent.x(), mouseButtonEvent.y())) {
-            this.draggingScroller = true;
-            setScrollOffFromMouseY(mouseButtonEvent.y());
-            return true;
-        }
-        return super.mouseClicked(mouseButtonEvent, bl);
+        return onMouseClicked(mouseButtonEvent.x(), mouseButtonEvent.y(), mouseButtonEvent.button())
+                || super.mouseClicked(mouseButtonEvent, bl);
     }
+    //?} else {
+    /*@Override
+    public boolean mouseDragged(double mouseX, double mouseY, int button, double d, double e) {
+        return onMouseDragged(mouseY) || super.mouseDragged(mouseX, mouseY, button, d, e);
+    }
+
+    @Override
+    public boolean mouseReleased(double mouseX, double mouseY, int button) {
+        return onMouseReleased(button) || super.mouseReleased(mouseX, mouseY, button);
+    }
+
+    @Override
+    public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        return onMouseClicked(mouseX, mouseY, button) || super.mouseClicked(mouseX, mouseY, button);
+    }
+    *///?}
 
     private int scrollerY() {
         int total = offersView.size();
@@ -512,10 +538,13 @@ public class SellerScreen extends AbstractContainerScreen<SellerScreenHandler> {
     protected void renderBg(GuiGraphics g, float f, int i, int j) {
         int k = (this.width - this.imageWidth) / 2;
         int l = (this.height - this.imageHeight) / 2;
-        g.blit(RenderPipelines.GUI_TEXTURED, BG, k, l, 0, 0, this.imageWidth, this.imageHeight, 512, 256);
+        GuiCompat.blit(g, BG, k, l, 0, 0, this.imageWidth, this.imageHeight, 512, 256);
     }
     @Environment(EnvType.CLIENT)
+    //? if >=1.21.11 {
     class OfferButton extends Button.Plain {
+    //?} else
+    /*class OfferButton extends Button {*/
         final int rowIndex;
 
         OfferButton(int x, int y, int rowIndex, Button.OnPress onPress) {

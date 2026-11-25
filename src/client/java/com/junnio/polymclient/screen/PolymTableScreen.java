@@ -10,7 +10,10 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+//? if >=1.21.6 {
 import net.minecraft.client.renderer.RenderPipelines;
+//?} else
+/*import net.minecraft.client.renderer.RenderType;*/
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.player.Inventory;
@@ -73,6 +76,9 @@ public class PolymTableScreen extends AbstractContainerScreen<PolymTableScreenHa
 
     @Override
     protected void renderBg(GuiGraphics context, float delta, int mouseX, int mouseY) {
+        //? if >=1.21.6 {
         context.blit(RenderPipelines.GUI_TEXTURED, TEXTURE,this.leftPos, this.topPos, 0F, 0F, this.imageWidth, this.imageHeight,256,256);
+        //?} else
+        /*context.blit(RenderType::guiTextured, TEXTURE, this.leftPos, this.topPos, 0F, 0F, this.imageWidth, this.imageHeight, 256, 256);*/
     }
 }

@@ -1,0 +1,18 @@
+{
+	"schemaVersion": 1,
+	"id": "polymcoin-test",
+	"version": "1.0.0",
+	"name": "polymcoin tests",
+	"environment": "*",
+	"entrypoints": {
+		"fabric-gametest": [
+			"com.junnio.polym.test.PolymTableGameTest"
+		],
+		"fabric-client-gametest": [
+			"com.junnio.polym.test.PolymClientGameTest"
+		]
+	},
+	"depends": {
+		"polymcoin": "*"
+	}
+}

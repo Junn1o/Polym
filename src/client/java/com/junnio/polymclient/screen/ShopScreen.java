@@ -3,7 +3,6 @@ package com.junnio.polymclient.screen;
 import com.junnio.polym.net.shop.ShopOfferViewData;
 import com.junnio.polym.screen.SellerScreenHandler;
 import com.junnio.polym.screen.ShopScreenHandler;
-import com.mojang.blaze3d.platform.cursor.CursorTypes;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.client.Minecraft;
@@ -16,10 +15,11 @@ import net.minecraft.client.gui.screens.inventory.tooltip.ClientTextTooltip;
 import net.minecraft.client.gui.screens.inventory.tooltip.ClientTooltipComponent;
 import net.minecraft.client.gui.screens.inventory.tooltip.ClientTooltipPositioner;
 import net.minecraft.client.gui.screens.inventory.tooltip.DefaultTooltipPositioner;
+//? if >=1.21.9 {
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.input.MouseButtonEvent;
+//?}
 import net.minecraft.client.multiplayer.PlayerInfo;
-import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
@@ -152,15 +152,12 @@ public class ShopScreen extends AbstractContainerScreen<ShopScreenHandler> {
         PlayerInfo info = getPlayerInfo(ownerUuid);
         if (info == null) return;
 
-        Identifier skin = info.getSkin().body().texturePath();
-        var pose = g.pose();
-        pose.pushMatrix();
-        pose.translate(x, y);
-        pose.scale(1.0f, 1.0f);
-        g.blit(RenderPipelines.GUI_TEXTURED, skin, 0, 0, 8.0f, 8.0f, 8, 8, 64, 64);
-        g.blit(RenderPipelines.GUI_TEXTURED, skin, 0, 0, 40.0f, 8.0f, 8, 8, 64, 64);
+        Identifier skin = GuiCompat.skin(info);
+        GuiCompat.pushTransform(g, x, y, 1.0f);
+        GuiCompat.blit(g, skin, 0, 0, 8.0f, 8.0f, 8, 8, 64, 64);
+        GuiCompat.blit(g, skin, 0, 0, 40.0f, 8.0f, 8, 8, 64, 64);
 
-        pose.popMatrix();
+        GuiCompat.popTransform(g);
     }
     private void updateOfferButtons() {
         for (int i = 0; i < 7; i++) {
@@ -285,12 +282,9 @@ public class ShopScreen extends AbstractContainerScreen<ShopScreenHandler> {
 
                 int ty = hy + (16 - (int)(this.font.lineHeight * scale)) / 2;
                 ty -= 3;
-                var pose = g.pose();
-                pose.pushMatrix();
-                pose.translate(tx, ty);
-                pose.scale(scale, scale);
+                GuiCompat.pushTransform(g, tx, ty, scale);
                 g.drawString(this.font, name, 0, 0, 0xFFFFFFFF, true);
-                pose.popMatrix();
+                GuiCompat.popTransform(g);
             }
         }
         ShopOfferViewData hovered = getHoveredOffer(mouseX, mouseY);
@@ -300,7 +294,7 @@ public class ShopScreen extends AbstractContainerScreen<ShopScreenHandler> {
                 cachedOwnerUuid = u;
                 cachedOwnerTooltip = new OwnerTooltip(u, hovered.ownerName());
             }
-            g.renderTooltip(this.font, List.of(cachedOwnerTooltip), mouseX, mouseY, DefaultTooltipPositioner.INSTANCE, null);
+            GuiCompat.tooltip(g, this.font, List.of(cachedOwnerTooltip), mouseX, mouseY);
         }
         String q = this.searchBox != null ? this.searchBox.getValue() : "";
         if (!q.equals(this.lastQuery)) {
@@ -324,7 +318,7 @@ public class ShopScreen extends AbstractContainerScreen<ShopScreenHandler> {
             cachedTooltip = buildTooltipComponents(stack);
         }
 
-        g.renderTooltip(this.font, cachedTooltip, mouseX, mouseY, DefaultTooltipPositioner.INSTANCE, null);
+        GuiCompat.tooltip(g, this.font, cachedTooltip, mouseX, mouseY);
     }
     private List<ClientTooltipComponent> buildTooltipComponents(ItemStack stack) {
         var mc = Minecraft.getInstance();
@@ -350,7 +344,7 @@ public class ShopScreen extends AbstractContainerScreen<ShopScreenHandler> {
         return comps;
     }
     private void renderSearchIcon(GuiGraphics guiGraphics, int baseX, int rowY) {
-        guiGraphics.blitSprite(RenderPipelines.GUI_TEXTURED, SEARCH_SPRITE, baseX, rowY, 12, 12);
+        GuiCompat.blitSprite(guiGraphics, SEARCH_SPRITE, baseX, rowY, 12, 12);
     }
     private static String fold(String s) {
         if (s == null) return "";
@@ -396,30 +390,27 @@ public class ShopScreen extends AbstractContainerScreen<ShopScreenHandler> {
     private void renderScaledFakeItem(GuiGraphics g, ItemStack stack, int x, int y, float scale, float itemoff) {
         if (stack.isEmpty()) return;
 
-        var m = g.pose();
-        m.pushMatrix();
-        m.translate(x + itemoff, y + itemoff);
-        m.scale(scale, scale);
+        GuiCompat.pushTransform(g, x + itemoff, y + itemoff, scale);
 
         g.renderFakeItem(stack, 0, 0);
         g.renderItemDecorations(this.font, stack, 0, 0);
 
-        m.popMatrix();
+        GuiCompat.popTransform(g);
     }
     private void renderButtonArrows(GuiGraphics guiGraphics, int baseX, int rowY) {
-        guiGraphics.blitSprite(RenderPipelines.GUI_TEXTURED, TRADE_ARROW_SPRITE, baseX + 5 + 30 + 20, rowY + 3, 10, 9);
+        GuiCompat.blitSprite(guiGraphics, TRADE_ARROW_SPRITE, baseX + 5 + 30 + 20, rowY + 3, 10, 9);
     }
     private void renderScroller(GuiGraphics g, int mouseX, int mouseY) {
         int sx = this.leftPos + SCROLL_X;
         int syBase = this.topPos + SCROLL_Y;
         if (canScroll()){
             int sy = syBase + scrollerY();
-            g.blitSprite(RenderPipelines.GUI_TEXTURED, SCROLLER_SPRITE, sx, sy, KNOB_W, KNOB_H);
+            GuiCompat.blitSprite(g, SCROLLER_SPRITE, sx, sy, KNOB_W, KNOB_H);
             if (mouseX >= sx && mouseX < sx + KNOB_W && mouseY >= sy && mouseY <= sy + KNOB_H) {
-                g.requestCursor(this.draggingScroller ? CursorTypes.RESIZE_NS : CursorTypes.POINTING_HAND);
+                GuiCompat.scrollerCursor(g, this.draggingScroller);
             }
         } else{
-            g.blitSprite(RenderPipelines.GUI_TEXTURED, SCROLLER_DISABLED_SPRITE, sx, syBase, KNOB_W, KNOB_H);
+            GuiCompat.blitSprite(g, SCROLLER_DISABLED_SPRITE, sx, syBase, KNOB_W, KNOB_H);
         }
     }
     private boolean canScroll() {
@@ -455,69 +446,114 @@ public class ShopScreen extends AbstractContainerScreen<ShopScreenHandler> {
         return true;
     }
 
-    @Override
-    public boolean mouseDragged(MouseButtonEvent mouseButtonEvent, double d, double e) {
+    private boolean onMouseDragged(double mouseY) {
         if (this.draggingScroller && canScroll()) {
             int i = this.offersView.size();
             int j = this.topPos + SCROLL_Y;
             int k = j + TRACK_H;
             int l = i - 7;
 
-            float f = ((float)mouseButtonEvent.y() - (float)j - (KNOB_H / 2.0f)) / ((float)(k - j) - (float)KNOB_H);
+            float f = ((float)mouseY - (float)j - (KNOB_H / 2.0f)) / ((float)(k - j) - (float)KNOB_H);
             f = f * (float)l + 0.5f;
             this.scrollOff = Mth.clamp((int)f, 0, l);
 
             updateOfferButtons();
             return true;
         }
-        return super.mouseDragged(mouseButtonEvent, d, e);
+        return false;
+    }
+
+    private boolean onMouseReleased(int button) {
+        if (button==0 && this.draggingScroller) {
+            this.draggingScroller = false;
+            return true;
+        }
+        return false;
+    }
+
+    private boolean isSearchFocused() {
+        return this.searchBox != null && this.searchBox.isFocused();
+    }
+
+    // only called while the search box is focused
+    private boolean onSearchKey(int key, boolean handledByBox, boolean isInventoryKey) {
+        if (handledByBox || isInventoryKey) {
+            return true;
+        }
+        if (key == org.lwjgl.glfw.GLFW.GLFW_KEY_ESCAPE) {
+            this.searchBox.setFocused(false);
+            this.setFocused(null);
+            return true;
+        }
+        return false;
+    }
+
+    private boolean onMouseClicked(double mouseX, double mouseY, int button) {
+        if (button==0 && canScroll() && isMouseOverScrollTrack(mouseX, mouseY)) {
+            this.draggingScroller = true;
+            setScrollOffFromMouseY(mouseY);
+            return true;
+        }
+        if (this.searchBox != null) {
+            boolean inside = this.searchBox.isMouseOver(mouseX, mouseY);
+            if (!inside) {
+                this.searchBox.setFocused(false);
+                this.setFocused(null);
+            }
+        }
+        return false;
+    }
+
+    //? if >=1.21.9 {
+    @Override
+    public boolean mouseDragged(MouseButtonEvent mouseButtonEvent, double d, double e) {
+        return onMouseDragged(mouseButtonEvent.y()) || super.mouseDragged(mouseButtonEvent, d, e);
     }
 
     @Override
     public boolean mouseReleased(MouseButtonEvent mouseButtonEvent) {
-        if (mouseButtonEvent.button()==0 && this.draggingScroller) {
-            this.draggingScroller = false;
-            return true;
-        }
-        return super.mouseReleased(mouseButtonEvent);
+        return onMouseReleased(mouseButtonEvent.button()) || super.mouseReleased(mouseButtonEvent);
     }
 
     @Override
     public boolean keyPressed(KeyEvent keyEvent) {
-        if (this.searchBox != null && this.searchBox.isFocused()) {
-            if (this.searchBox.keyPressed(keyEvent)) {
-                return true;
-            }
-            var invKey = Minecraft.getInstance().options.keyInventory;
-            if (invKey.matches(keyEvent)) {
-                return true;
-            }
-            var keyCode = org.lwjgl.glfw.GLFW.GLFW_KEY_ESCAPE;
-            if (keyEvent.key() == keyCode) {
-                this.searchBox.setFocused(false);
-                this.setFocused(null);
-                return true;
-            }
+        if (isSearchFocused() && onSearchKey(keyEvent.key(), this.searchBox.keyPressed(keyEvent),
+                Minecraft.getInstance().options.keyInventory.matches(keyEvent))) {
+            return true;
         }
         return super.keyPressed(keyEvent);
     }
 
     @Override
     public boolean mouseClicked(MouseButtonEvent mouseButtonEvent, boolean bl) {
-        if (mouseButtonEvent.button()==0 && canScroll() && isMouseOverScrollTrack(mouseButtonEvent.x(), mouseButtonEvent.y())) {
-            this.draggingScroller = true;
-            setScrollOffFromMouseY(mouseButtonEvent.y());
+        return onMouseClicked(mouseButtonEvent.x(), mouseButtonEvent.y(), mouseButtonEvent.button())
+                || super.mouseClicked(mouseButtonEvent, bl);
+    }
+    //?} else {
+    /*@Override
+    public boolean mouseDragged(double mouseX, double mouseY, int button, double d, double e) {
+        return onMouseDragged(mouseY) || super.mouseDragged(mouseX, mouseY, button, d, e);
+    }
+
+    @Override
+    public boolean mouseReleased(double mouseX, double mouseY, int button) {
+        return onMouseReleased(button) || super.mouseReleased(mouseX, mouseY, button);
+    }
+
+    @Override
+    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+        if (isSearchFocused() && onSearchKey(keyCode, this.searchBox.keyPressed(keyCode, scanCode, modifiers),
+                Minecraft.getInstance().options.keyInventory.matches(keyCode, scanCode))) {
             return true;
         }
-        if (this.searchBox != null) {
-            boolean inside = this.searchBox.isMouseOver(mouseButtonEvent.x(), mouseButtonEvent.y());
-            if (!inside) {
-                this.searchBox.setFocused(false);
-                this.setFocused(null);
-            }
-        }
-        return super.mouseClicked(mouseButtonEvent, bl);
+        return super.keyPressed(keyCode, scanCode, modifiers);
     }
+
+    @Override
+    public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        return onMouseClicked(mouseX, mouseY, button) || super.mouseClicked(mouseX, mouseY, button);
+    }
+    *///?}
 
     private int scrollerY() {
         int total = offersView.size();
@@ -536,10 +572,13 @@ public class ShopScreen extends AbstractContainerScreen<ShopScreenHandler> {
     protected void renderBg(GuiGraphics g, float f, int i, int j) {
         int k = (this.width - this.imageWidth) / 2;
         int l = (this.height - this.imageHeight) / 2;
-        g.blit(RenderPipelines.GUI_TEXTURED, BG, k, l, 0, 0, this.imageWidth, this.imageHeight, 512, 256);
+        GuiCompat.blit(g, BG, k, l, 0, 0, this.imageWidth, this.imageHeight, 512, 256);
     }
     @Environment(EnvType.CLIENT)
+    //? if >=1.21.11 {
     class OfferButton extends Button.Plain {
+    //?} else
+    /*class OfferButton extends Button {*/
         final int rowIndex;
 
         OfferButton(int x, int y, int rowIndex, Button.OnPress onPress) {
@@ -576,11 +615,19 @@ public class ShopScreen extends AbstractContainerScreen<ShopScreenHandler> {
             return ICON;
         }
 
+        //? if >=1.21.6 {
         @Override
         public void renderText(GuiGraphics g, Font font, int x, int y) {
             int ty = y + (ICON - font.lineHeight) / 2;
             g.drawString(font, fitted, x + ICON + GAP, ty, 0xFFFFFFFF, true);
         }
+        //?} else {
+        /*@Override
+        public void renderText(Font font, int x, int y, org.joml.Matrix4f matrix, net.minecraft.client.renderer.MultiBufferSource.BufferSource buffer) {
+            int ty = y + (ICON - font.lineHeight) / 2;
+            font.drawInBatch(fitted, x + ICON + GAP, ty, 0xFFFFFFFF, true, matrix, buffer, Font.DisplayMode.NORMAL, 0, 0xF000F0);
+        }
+        *///?}
 
         @Override
         public void renderImage(Font font, int x, int y, int width, int height, GuiGraphics g) {
@@ -592,17 +639,14 @@ public class ShopScreen extends AbstractContainerScreen<ShopScreenHandler> {
                 return;
             }
 
-            Identifier skin = info.getSkin().body().texturePath();
+            Identifier skin = GuiCompat.skin(info);
 
-            var pose = g.pose();
-            pose.pushMatrix();
-            pose.translate(x, y);
-            pose.scale(1.0f, 1.0f);
+            GuiCompat.pushTransform(g, x, y, 1.0f);
 
-            g.blit(RenderPipelines.GUI_TEXTURED, skin, 0, 0, 8.0f, 8.0f, 8, 8, 64, 64);
-            g.blit(RenderPipelines.GUI_TEXTURED, skin, 0, 0, 40.0f, 8.0f, 8, 8, 64, 64);
+            GuiCompat.blit(g, skin, 0, 0, 8.0f, 8.0f, 8, 8, 64, 64);
+            GuiCompat.blit(g, skin, 0, 0, 40.0f, 8.0f, 8, 8, 64, 64);
 
-            pose.popMatrix();
+            GuiCompat.popTransform(g);
         }
     }
 }
