@@ -1,6 +1,11 @@
 # Builds every supported Minecraft version (Stonecutter) and runs the gametests on
 # each push and pull request. On main, a new mod_version in gradle.properties is
 # released automatically as a GitHub release with one jar per Minecraft version.
+#
+# Runner choice: pushes by the repo owner run on the self-hosted runner junnio-homelab
+# when it is online, everything else (pull requests, forks, runner offline) runs on GitHub.
+# The online check needs the secret RUNNER_STATUS_TOKEN: a fine-grained token with
+# "Administration: Read" on this repository. Without it GitHub runners are used.
 
 name: build
 on: [pull_request, push]
@@ -9,22 +14,78 @@ permissions:
   contents: write
 
 jobs:
-  build:
+  pick-runner:
     runs-on: ubuntu-24.04
+    outputs:
+      runner: ${{ steps.pick.outputs.runner }}
     steps:
+      - name: pick runner
+        id: pick
+        env:
+          TOKEN: ${{ secrets.RUNNER_STATUS_TOKEN }}
+          TRUSTED: ${{ github.event_name == 'push' && github.actor == github.repository_owner }}
+          SELF_HOSTED_RUNNER: junnio-homelab
+        run: |
+          runner='"ubuntu-24.04"'
+          echo "event=${{ github.event_name }} actor=${{ github.actor }} owner=${{ github.repository_owner }} trusted=$TRUSTED"
+          if [ "$TRUSTED" != "true" ]; then
+            echo "Not a push by the owner, using GitHub runner"
+          elif [ -z "$TOKEN" ]; then
+            echo "RUNNER_STATUS_TOKEN is empty (must be a repository secret), using GitHub runner"
+          else
+            status=$(curl -sS -o runners.json -w '%{http_code}' \
+              -H "Authorization: Bearer $TOKEN" -H "Accept: application/vnd.github+json" \
+              "https://api.github.com/repos/${{ github.repository }}/actions/runners")
+            echo "runners API HTTP $status"
+            if [ "$status" = "200" ]; then
+              echo "Runners registered on this repo:"
+              jq -r '.runners[] | "  \(.name) status=\(.status) busy=\(.busy) labels=\([.labels[].name] | join(","))"' runners.json
+              online=$(jq --arg name "$SELF_HOSTED_RUNNER" '[.runners[] | select(.name == $name and .status == "online")] | length' runners.json)
+              if [ "$online" -gt 0 ]; then
+                runner='["self-hosted","Linux"]'
+              else
+                echo "$SELF_HOSTED_RUNNER is not registered on this repo or is offline"
+              fi
+            else
+              jq -r '.message // empty' runners.json
+            fi
+          fi
+          echo "Using runner: $runner"
+          echo "runner=$runner" >> "$GITHUB_OUTPUT"
+
+  build:
+    needs: pick-runner
+    runs-on: ${{ fromJSON(needs.pick-runner.outputs.runner) }}
+    timeout-minutes: 60
+    # same environment on both runners; the self-hosted host only needs Docker
+    container:
+      image: eclipse-temurin:21-jdk-noble
+      # named volume keeps the Gradle cache between runs on the self-hosted runner
+      volumes:
+        - polym-gradle-cache:/gradle-home
+    env:
+      GRADLE_USER_HOME: /gradle-home
+    steps:
+      - name: install system packages
+        # xvfb + mesa + the X11 libraries GLFW loads for the client gametests,
+        # git so checkout fetches tags
+        run: |
+          apt-get update -q
+          apt-get install -y -q --no-install-recommends git xvfb xauth \
+            libgl1 libgl1-mesa-dri libglx-mesa0 libegl1 \
+            libx11-6 libx11-xcb1 libxext6 libxrender1 libxrandr2 libxcursor1 libxi6 libxinerama1 libxxf86vm1 libxtst6 \
+            libxkbcommon0 libasound2t64 libpulse0 fontconfig
       - name: checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
       - name: validate gradle wrapper
         uses: gradle/actions/wrapper-validation@v4
-      - name: setup jdk
-        uses: actions/setup-java@v4
-        with:
-          java-version: '21'
-          distribution: 'microsoft'
       - name: setup gradle
         uses: gradle/actions/setup-gradle@v4
+        with:
+          # the docker volume already holds the cache on the self-hosted runner
+          cache-disabled: ${{ runner.environment == 'self-hosted' }}
       - name: make gradle wrapper executable
         run: chmod +x ./gradlew
 
@@ -35,7 +96,6 @@ jobs:
       - name: client gametests
         # xvfb defaults to an 8-bit screen, which cannot create an OpenGL context
         run: |
-          sudo apt-get update -q && sudo apt-get install -y -q xvfb libgl1-mesa-dri libglx-mesa0
           xvfb-run -a -s "-screen 0 1920x1080x24" ./gradlew --no-parallel runClientGameTest
 
       - name: read mod version
@@ -64,17 +124,30 @@ jobs:
           if-no-files-found: ignore
 
       # a release is only made when the version in gradle.properties has no tag yet
-      - name: release new version
+      - name: check release tag
+        id: tag
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           VERSION: ${{ steps.version.outputs.mod_version }}
         run: |
           if git rev-parse -q --verify "refs/tags/$VERSION" >/dev/null; then
             echo "Tag $VERSION already exists, skipping release"
-            exit 0
+            echo "release=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "release=true" >> "$GITHUB_OUTPUT"
           fi
-          gh release create "$VERSION" build/libs/"$VERSION"/*.jar \
-            --target "$GITHUB_SHA" \
-            --title "Polym $VERSION" \
-            --generate-notes
+      - name: release new version
+        if: steps.tag.outputs.release == 'true'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.version.outputs.mod_version }}
+          target_commitish: ${{ github.sha }}
+          name: Polym ${{ steps.version.outputs.mod_version }}
+          generate_release_notes: true
+          files: build/libs/${{ steps.version.outputs.mod_version }}/*.jar
+
+      # the container runs as root; hand the workspace back to the runner user so the
+      # next self-hosted run can clean it
+      - name: restore workspace ownership
+        if: always()
+        run: chown -R "$(stat -c '%u:%g' "$GITHUB_WORKSPACE/..")" "$GITHUB_WORKSPACE"
